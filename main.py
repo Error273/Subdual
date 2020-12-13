@@ -29,9 +29,9 @@ while running:
                 player.set_going_up(True)
             if event.key == pygame.K_a and player.x >= 0:
                 player.set_going_left(True)
-            if event.key == pygame.K_s and player.y < WINDOW_HEIGHT:
+            if event.key == pygame.K_s and player.y < WINDOW_HEIGHT * 2:
                 player.set_going_down(True)
-            if event.key == pygame.K_d and player.x < WINDOW_WIDTH:
+            if event.key == pygame.K_d and player.x < WINDOW_WIDTH * 2:
                 player.set_going_right(True)
 
         if event.type == pygame.KEYUP:
@@ -45,29 +45,29 @@ while running:
             if event.key == pygame.K_d:
                 player.set_going_right(False)
     # если игрок двигается, то и камеру тоже нужно двигать за ним.
-    if player.going_left and camera_x + PLAYER_MOVEMENT_SPEED >= 0:
+    if player.going_left:
         camera_x += PLAYER_MOVEMENT_SPEED
-    if player.going_right and camera_x - PLAYER_MOVEMENT_SPEED >= 0:
+    if player.going_right:
         camera_x -= PLAYER_MOVEMENT_SPEED
-    if player.going_up and camera_y + PLAYER_MOVEMENT_SPEED >= 0:
+    if player.going_up:
         camera_y += PLAYER_MOVEMENT_SPEED
-    if player.going_down and camera_y - PLAYER_MOVEMENT_SPEED >= 0:
+    if player.going_down:
         camera_y -= PLAYER_MOVEMENT_SPEED
 
 
     # Условия для ограничения выхода за пределы поля
+    # Где границы клетки?
     if player.x < 0:
         player.set_going_left(False)
-    if player.x > WINDOW_WIDTH:
+    if player.x > WINDOW_WIDTH * 5:
         player.set_going_right(False)
     if player.y - CELL_SIZE < 0:
         player.set_going_up(False)
-    if player.y > WINDOW_HEIGHT:
+    if player.y > WINDOW_HEIGHT * 5:
         player.set_going_down(False)
 
-
     screen.fill(BACKGROUND_COLOR)
-    print(player.x, player.y)
+    print(player.x, player.y, ' --->', camera_x, camera_y)
 
     # захват камерой получается при смещении каждого объекта на экране на координаты камеры
     # поэтому для каждого объекта
