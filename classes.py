@@ -39,7 +39,7 @@ class Player:
 
     def draw(self, surface, camera_x, camera_y):
         pygame.draw.rect(surface, 'black', (camera_x + self.x,
-                                            camera_y + self.y - CELL_SIZE,
+                                            camera_y + self.y,
                                             CELL_SIZE,
                                             CELL_SIZE * 2))
 

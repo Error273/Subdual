@@ -53,15 +53,14 @@ while running:
     if player.going_down:
         camera_y -= PLAYER_MOVEMENT_SPEED
 
-
     # Условия для ограничения выхода за пределы поля
-    if player.x < 0:
+    if player.x <= 0:
         player.set_going_left(False)
     if player.x >= grid.width * CELL_SIZE - CELL_SIZE:
         player.set_going_right(False)
-    if player.y - CELL_SIZE < 0:
+    if player.y <= 0:
         player.set_going_up(False)
-    if player.y >= grid.height * CELL_SIZE - CELL_SIZE:
+    if player.y >= grid.height * CELL_SIZE - CELL_SIZE * 2:
         player.set_going_down(False)
 
     screen.fill(BACKGROUND_COLOR)
