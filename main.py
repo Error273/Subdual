@@ -1,3 +1,4 @@
+import pygame
 from classes import *
 
 pygame.init()
@@ -24,13 +25,13 @@ while running:
             continue
         if event.type == pygame.KEYDOWN:
             # если нажата клавиша вниз, то начинаем движение
-            if event.key == pygame.K_w:
+            if event.key == pygame.K_w and player.y >= 0:
                 player.set_going_up(True)
-            if event.key == pygame.K_a:
+            if event.key == pygame.K_a and player.x >= 0:
                 player.set_going_left(True)
-            if event.key == pygame.K_s:
+            if event.key == pygame.K_s and player.y < WINDOW_HEIGHT:
                 player.set_going_down(True)
-            if event.key == pygame.K_d:
+            if event.key == pygame.K_d and player.x < WINDOW_WIDTH:
                 player.set_going_right(True)
 
         if event.type == pygame.KEYUP:
@@ -44,14 +45,26 @@ while running:
             if event.key == pygame.K_d:
                 player.set_going_right(False)
     # если игрок двигается, то и камеру тоже нужно двигать за ним.
-    if player.going_left:
+    if player.going_left and camera_x + PLAYER_MOVEMENT_SPEED >= 0:
         camera_x += PLAYER_MOVEMENT_SPEED
-    if player.going_right:
+    if player.going_right and camera_x - PLAYER_MOVEMENT_SPEED >= 0:
         camera_x -= PLAYER_MOVEMENT_SPEED
-    if player.going_up:
+    if player.going_up and camera_y + PLAYER_MOVEMENT_SPEED >= 0:
         camera_y += PLAYER_MOVEMENT_SPEED
-    if player.going_down:
+    if player.going_down and camera_y - PLAYER_MOVEMENT_SPEED >= 0:
         camera_y -= PLAYER_MOVEMENT_SPEED
+
+
+    # Условия для ограничения выхода за пределы поля
+    if player.x < 0:
+        player.set_going_left(False)
+    if player.x > WINDOW_WIDTH:
+        player.set_going_right(False)
+    if player.y - CELL_SIZE < 0:
+        player.set_going_up(False)
+    if player.y > WINDOW_HEIGHT:
+        player.set_going_down(False)
+
 
     screen.fill(BACKGROUND_COLOR)
     print(player.x, player.y)
