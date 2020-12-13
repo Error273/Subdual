@@ -44,15 +44,6 @@ while running:
             if event.key == pygame.K_d:
                 player.set_going_right(False)
     # если игрок двигается, то и камеру тоже нужно двигать за ним.
-    if player.going_left:
-        camera_x += PLAYER_MOVEMENT_SPEED
-    if player.going_right:
-        camera_x -= PLAYER_MOVEMENT_SPEED
-    if player.going_up:
-        camera_y += PLAYER_MOVEMENT_SPEED
-    if player.going_down:
-        camera_y -= PLAYER_MOVEMENT_SPEED
-
     # Условия для ограничения выхода за пределы поля
     if player.x <= 0:
         player.set_going_left(False)
@@ -62,6 +53,15 @@ while running:
         player.set_going_up(False)
     if player.y >= grid.height * CELL_SIZE - CELL_SIZE * 2:
         player.set_going_down(False)
+
+    if player.going_left:
+        camera_x += PLAYER_MOVEMENT_SPEED
+    if player.going_right:
+        camera_x -= PLAYER_MOVEMENT_SPEED
+    if player.going_up:
+        camera_y += PLAYER_MOVEMENT_SPEED
+    if player.going_down:
+        camera_y -= PLAYER_MOVEMENT_SPEED
 
     screen.fill(BACKGROUND_COLOR)
     print(player.x, player.y, ' --->', camera_x, camera_y)
