@@ -29,11 +29,10 @@ while running:
                 player.set_going_up(True)
             if event.key == pygame.K_a and player.x >= 0:
                 player.set_going_left(True)
-            if event.key == pygame.K_s and player.y < WINDOW_HEIGHT * 2:
+            if event.key == pygame.K_s and player.y < grid.height * CELL_SIZE:
                 player.set_going_down(True)
-            if event.key == pygame.K_d and player.x < WINDOW_WIDTH * 2:
+            if event.key == pygame.K_d and player.x < grid.width * CELL_SIZE:
                 player.set_going_right(True)
-
         if event.type == pygame.KEYUP:
             # если клавиша отпущена, движение прекращаем
             if event.key == pygame.K_w:
@@ -56,14 +55,13 @@ while running:
 
 
     # Условия для ограничения выхода за пределы поля
-    # Где границы клетки?
     if player.x < 0:
         player.set_going_left(False)
-    if player.x > WINDOW_WIDTH * 5:
+    if player.x >= grid.width * CELL_SIZE - CELL_SIZE:
         player.set_going_right(False)
     if player.y - CELL_SIZE < 0:
         player.set_going_up(False)
-    if player.y > WINDOW_HEIGHT * 5:
+    if player.y >= grid.height * CELL_SIZE - CELL_SIZE:
         player.set_going_down(False)
 
     screen.fill(BACKGROUND_COLOR)
