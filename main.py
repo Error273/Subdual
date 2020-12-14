@@ -1,4 +1,3 @@
-import pygame
 from classes import *
 
 pygame.init()
@@ -9,13 +8,17 @@ running = True
 
 clock = pygame.time.Clock()
 
-grid = Grid(100, 100)
+# TODO: оптимизировать сетку
+grid = Grid(25, 25)
 
-player = Player(400, 300)
+player = Player(400, 400)
+
+buildings = []
 
 # позиция камеры
 camera_x = 0
 camera_y = 0
+player_is_building = False
 
 while running:
     for event in pygame.event.get():
@@ -23,6 +26,25 @@ while running:
             # если нажали на крестик, выходим
             running = False
             continue
+        # если мы нажали на кнопку и сейчас можно строить
+        if event.type == pygame.MOUSEBUTTONDOWN and player_is_building:
+            x, y = event.pos
+            # проверяем, строим ли мы внутри карты
+            if camera_y <= y and y < camera_y + CELL_SIZE * grid.height - CELL_SIZE and\
+                    camera_x <= x and x < camera_x + CELL_SIZE * grid.width - CELL_SIZE:
+                # я не совсем понимаю, зачем отнимать от координаты мыши координаты камеры, но без этого не работает
+                x -= camera_x
+                y -= camera_y
+
+                # привязываем постройку к сетке
+                # TODO: показывать здание перед постройкой, отцентрированное по мыши с уменьшенной прозрачностью, чтобы
+                #  было понятно что и куда ставить
+
+                x = x // CELL_SIZE * CELL_SIZE
+                y = y // CELL_SIZE * CELL_SIZE
+
+                buildings.append(BaseBuilding(x, y, 50, 50))
+
         if event.type == pygame.KEYDOWN:
             # если нажата клавиша вниз, то начинаем движение
             if event.key == pygame.K_w and player.y >= 0:
@@ -33,6 +55,10 @@ while running:
                 player.set_going_down(True)
             if event.key == pygame.K_d and player.x < grid.width * CELL_SIZE:
                 player.set_going_right(True)
+            # если нажали на клавишу один, то переключаем режим строительства
+            if event.key == pygame.K_1:
+                player_is_building = not player_is_building
+
         if event.type == pygame.KEYUP:
             # если клавиша отпущена, движение прекращаем
             if event.key == pygame.K_w:
@@ -43,7 +69,6 @@ while running:
                 player.set_going_down(False)
             if event.key == pygame.K_d:
                 player.set_going_right(False)
-    # если игрок двигается, то и камеру тоже нужно двигать за ним.
     # Условия для ограничения выхода за пределы поля
     if player.x <= 0:
         player.set_going_left(False)
@@ -54,6 +79,8 @@ while running:
     if player.y >= grid.height * CELL_SIZE - CELL_SIZE * 2:
         player.set_going_down(False)
 
+    # если игрок двигается, то и камеру тоже нужно двигать за ним.
+    # TODO: отцентрировать камеру по игроку, так как она почему то закрепляется за ним при первом запуске
     if player.going_left:
         camera_x += PLAYER_MOVEMENT_SPEED
     if player.going_right:
@@ -64,11 +91,15 @@ while running:
         camera_y -= PLAYER_MOVEMENT_SPEED
 
     screen.fill(BACKGROUND_COLOR)
-    print(player.x, player.y, ' --->', camera_x, camera_y)
 
-    # захват камерой получается при смещении каждого объекта на экране на координаты камеры
-    # поэтому для каждого объекта
-    grid.render(screen, camera_x, camera_y)
+    # показываем сетку только если сейчас можно строить
+    if player_is_building:
+        grid.render(screen, camera_x, camera_y)
+
+    # отрисовываем все постройки
+    for building in buildings:
+        building.update()
+        building.draw(screen, camera_x, camera_y)
 
     player.update()
     player.draw(screen, camera_x, camera_y)

@@ -54,3 +54,17 @@ class Player:
 
     def set_going_right(self, going_right):
         self.going_right = going_right
+
+
+class BaseBuilding:
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+    def update(self):
+        pass
+
+    def draw(self, surface, camera_x, camera_y):
+        pygame.draw.rect(surface, (227, 208, 64), (camera_x + self.x, camera_y + self.y, self.width, self.height))
