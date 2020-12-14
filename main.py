@@ -18,7 +18,6 @@ buildings = []
 # позиция камеры
 camera_x = 0
 camera_y = 0
-player_is_building = False
 
 while running:
     for event in pygame.event.get():
@@ -27,7 +26,7 @@ while running:
             running = False
             continue
         # если мы нажали на кнопку и сейчас можно строить
-        if event.type == pygame.MOUSEBUTTONDOWN and player_is_building:
+        if event.type == pygame.MOUSEBUTTONDOWN and player.get_is_building():
             x, y = event.pos
             # проверяем, строим ли мы внутри карты
             if camera_y <= y and y < camera_y + CELL_SIZE * grid.height - CELL_SIZE and\
@@ -57,7 +56,7 @@ while running:
                 player.set_going_right(True)
             # если нажали на клавишу один, то переключаем режим строительства
             if event.key == pygame.K_1:
-                player_is_building = not player_is_building
+                player.set_is_building(not player.get_is_building())
 
         if event.type == pygame.KEYUP:
             # если клавиша отпущена, движение прекращаем
@@ -93,7 +92,7 @@ while running:
     screen.fill(BACKGROUND_COLOR)
 
     # показываем сетку только если сейчас можно строить
-    if player_is_building:
+    if player.get_is_building():
         grid.render(screen, camera_x, camera_y)
 
     # отрисовываем все постройки

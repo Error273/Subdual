@@ -26,6 +26,7 @@ class Player:
         self.going_right = False
         self.going_up = False
         self.going_down = False
+        self.is_building = False
 
     def update(self):
         if self.going_up:
@@ -54,6 +55,12 @@ class Player:
 
     def set_going_right(self, going_right):
         self.going_right = going_right
+
+    def set_is_building(self, is_building):
+        self.is_building = is_building
+
+    def get_is_building(self):
+        return self.is_building
 
 
 class BaseBuilding:
