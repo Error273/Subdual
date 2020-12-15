@@ -29,8 +29,8 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN and player.get_is_building():
             x, y = event.pos
             # проверяем, строим ли мы внутри карты
-            if camera_y <= y and y < camera_y + CELL_SIZE * grid.height - CELL_SIZE and\
-                    camera_x <= x and x < camera_x + CELL_SIZE * grid.width - CELL_SIZE:
+            if camera_y <= y < camera_y + CELL_SIZE * grid.height - CELL_SIZE and \
+                    camera_x <= x < camera_x + CELL_SIZE * grid.width - CELL_SIZE:
                 # я не совсем понимаю, зачем отнимать от координаты мыши координаты камеры, но без этого не работает
                 x -= camera_x
                 y -= camera_y
@@ -79,7 +79,6 @@ while running:
         player.set_going_down(False)
 
     # если игрок двигается, то и камеру тоже нужно двигать за ним.
-    # TODO: отцентрировать камеру по игроку, так как она почему-то закрепляется за ним при первом запуске
     if player.going_left:
         camera_x += PLAYER_MOVEMENT_SPEED
     if player.going_right:
