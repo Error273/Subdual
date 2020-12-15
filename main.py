@@ -8,8 +8,7 @@ running = True
 
 clock = pygame.time.Clock()
 
-# TODO: оптимизировать сетку
-grid = Grid(25, 25)
+grid = Grid(100, 100)
 
 player = Player(400, 400)
 

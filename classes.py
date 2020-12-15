@@ -9,12 +9,14 @@ class Grid:
         self.height = height
 
     def render(self, surface, camera_x, camera_y):
-        for i in range(self.height):
-            for j in range(self.width):
-                pygame.draw.rect(surface, 'grey', (camera_x + j * CELL_SIZE,
-                                                   camera_y + i * CELL_SIZE,
-                                                   CELL_SIZE,
-                                                   CELL_SIZE), 1)
+        # вместо целых квадратов рисуем линиями, так как быстрее нарисовать 200 линий, чем 10 000 квадратов
+        for i in range(self.width + 1):
+            pygame.draw.line(surface, 'grey', (camera_x + i * CELL_SIZE, camera_y),
+                             (camera_x + i * CELL_SIZE, camera_y + self.height * CELL_SIZE))
+
+        for i in range(self.height + 1):
+            pygame.draw.line(surface, 'grey', (camera_x, camera_y + i * CELL_SIZE),
+                             (camera_x + self.width * CELL_SIZE, camera_y + i * CELL_SIZE))
 
 
 class Player:
