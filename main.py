@@ -15,8 +15,9 @@ player = Player(400, 400)
 buildings = []
 
 # позиция камеры
-camera_x = 0
-camera_y = 0
+camera_x = (WINDOW_WIDTH - player.x * 2) // 2
+camera_y = (WINDOW_HEIGHT - player.y * 2) // 2
+
 
 while running:
     for event in pygame.event.get():
@@ -78,7 +79,7 @@ while running:
         player.set_going_down(False)
 
     # если игрок двигается, то и камеру тоже нужно двигать за ним.
-    # TODO: отцентрировать камеру по игроку, так как она почему то закрепляется за ним при первом запуске
+    # TODO: отцентрировать камеру по игроку, так как она почему-то закрепляется за ним при первом запуске
     if player.going_left:
         camera_x += PLAYER_MOVEMENT_SPEED
     if player.going_right:
@@ -89,7 +90,6 @@ while running:
         camera_y -= PLAYER_MOVEMENT_SPEED
 
     screen.fill(BACKGROUND_COLOR)
-
     # показываем сетку только если сейчас можно строить
     if player.get_is_building():
         grid.render(screen, camera_x, camera_y)
