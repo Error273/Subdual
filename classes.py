@@ -1,29 +1,53 @@
 import pygame
+import os
 from constants import *
 
 
-class Grid:
+class Camera:
+    # зададим начальный сдвиг камеры
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    # сдвинуть объект obj на смещение камеры
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    # позиционировать камеру на объекте target
+    def update(self, target):
+        self.dx = -(target.rect.x + target.rect.w // 2 - WINDOW_WIDTH // 2)
+        self.dy = -(target.rect.y + target.rect.h // 2 - WINDOW_HEIGHT // 2)
+
+
+class Grid(pygame.sprite.Sprite):
     # серая сетка на фоне, по которой будут выравниваться постройки.
-    def __init__(self, width, height):
+    def __init__(self, width, height, *groups):
+        super().__init__(*groups)
         self.width = width
         self.height = height
+        self.image = pygame.Surface((self.width * CELL_SIZE + 1, self.height * CELL_SIZE + 1), pygame.SRCALPHA, 32)
+        self.image = self.image.convert_alpha()
+        self.rect = self.image.get_rect()
 
-    def render(self, surface, camera_x, camera_y):
-        # вместо целых квадратов рисуем линиями, так как быстрее нарисовать 200 линий, чем 10 000 квадратов
         for i in range(self.width + 1):
-            pygame.draw.line(surface, 'grey', (camera_x + i * CELL_SIZE, camera_y),
-                             (camera_x + i * CELL_SIZE, camera_y + self.height * CELL_SIZE))
+            pygame.draw.line(self.image, 'grey', (i * CELL_SIZE, 0),
+                             (i * CELL_SIZE, self.height * CELL_SIZE))
 
         for i in range(self.height + 1):
-            pygame.draw.line(surface, 'grey', (camera_x, camera_y + i * CELL_SIZE),
-                             (camera_x + self.width * CELL_SIZE, camera_y + i * CELL_SIZE))
+            pygame.draw.line(self.image, 'grey', (0, i * CELL_SIZE),
+                             (self.width * CELL_SIZE, i * CELL_SIZE))
+
+    def draw(self, surface):
+        surface.blit(self.image, (self.rect.x, self.rect.y))
 
 
-class Player:
+class Player(pygame.sprite.Sprite):
     # главный игрок
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __init__(self, x, y, *groups):
+        super().__init__(*groups)
+        self.image = pygame.image.load(os.path.join('Images', 'Гелик(стоит).png'))
+        self.rect = self.image.get_rect().move(x, y)
         self.going_left = False
         self.going_right = False
         self.going_up = False
@@ -32,19 +56,13 @@ class Player:
 
     def update(self):
         if self.going_up:
-            self.y -= PLAYER_MOVEMENT_SPEED
+            self.rect.y -= PLAYER_MOVEMENT_SPEED
         if self.going_left:
-            self.x -= PLAYER_MOVEMENT_SPEED
+            self.rect.x -= PLAYER_MOVEMENT_SPEED
         if self.going_right:
-            self.x += PLAYER_MOVEMENT_SPEED
+            self.rect.x += PLAYER_MOVEMENT_SPEED
         if self.going_down:
-            self.y += PLAYER_MOVEMENT_SPEED
-
-    def draw(self, surface, camera_x, camera_y):
-        pygame.draw.rect(surface, 'black', (camera_x + self.x,
-                                            camera_y + self.y,
-                                            CELL_SIZE,
-                                            CELL_SIZE * 2))
+            self.rect.y += PLAYER_MOVEMENT_SPEED
 
     def set_going_up(self, going_up):
         self.going_up = going_up
@@ -65,15 +83,14 @@ class Player:
         return self.is_building
 
 
-class BaseBuilding:
-    def __init__(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+class BaseBuilding(pygame.sprite.Sprite):
+    def __init__(self, x, y, *groups):
+        super().__init__(*groups)
+        self.image = pygame.Surface((CELL_SIZE, CELL_SIZE))
+        self.rect = self.image.get_rect().move(x, y)
 
-    def update(self):
-        pass
 
-    def draw(self, surface, camera_x, camera_y):
-        pygame.draw.rect(surface, (227, 208, 64), (camera_x + self.x, camera_y + self.y, self.width, self.height))
+class WoodenFence(BaseBuilding):
+    def __init__(self, x, y, *groups):
+        super().__init__(x, y, *groups)
+        self.image = pygame.image.load(os.path.join('Images', 'Стена 1.png'))
