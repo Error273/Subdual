@@ -39,10 +39,17 @@ while running:
                 #  было понятно что и куда ставить
 
                 # умным образом отравниваем построку по сетке
+                # FIXME: не всегда хорошо работает
                 x = x - x % CELL_SIZE + grid.rect.x % CELL_SIZE
                 y = y - y % CELL_SIZE + grid.rect.y % CELL_SIZE
 
-                WoodenFence(x, y, buildings_group, all_sprites)
+                building = WoodenFence(x, y, buildings_group, all_sprites)
+                # проверяем, сколько объектов находится на месте постройки. пропускаем 2 потому, что это сетка и
+                # (почему - то) сама постройка
+                if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
+                    # удаляем построку совсем
+                    building.kill()
+
 
         if event.type == pygame.KEYDOWN:
             # если нажата клавиша вниз, то начинаем движение

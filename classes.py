@@ -70,14 +70,18 @@ class Player(pygame.sprite.Sprite):
 
     def check_collisions(self, grid, buildings_group):
         # Условия для ограничения выхода за пределы поля
-        if self.rect.top <= grid.rect.top:
+        if self.rect.top < grid.rect.top and self.going_up:
             self.set_going_up(False)
-        if self.rect.left <= grid.rect.left:
+            self.rect.top += PLAYER_MOVEMENT_SPEED
+        if self.rect.left < grid.rect.left and self.going_left:
             self.set_going_left(False)
-        if self.rect.right >= grid.rect.right:
+            self.rect.left += PLAYER_MOVEMENT_SPEED
+        if self.rect.right > grid.rect.right and self.going_right:
             self.set_going_right(False)
-        if self.rect.bottom >= grid.rect.bottom:
+            self.rect.right -= PLAYER_MOVEMENT_SPEED
+        if self.rect.bottom > grid.rect.bottom and self.going_down:
             self.set_going_down(False)
+            self.rect.bottom -= PLAYER_MOVEMENT_SPEED
 
         # Проверка на столкновения с постройками
         # берем все спрайты, с которыми столкнулся игрок
