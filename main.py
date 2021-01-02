@@ -15,7 +15,6 @@ grid = Grid(100, 100, all_sprites)
 
 player = Player(400, 400, all_sprites, player_group)
 
-# позиция камеры
 camera = Camera()
 
 while running:
@@ -39,6 +38,7 @@ while running:
                 # TODO: показывать здание перед постройкой, отцентрированное по мыши с уменьшенной прозрачностью, чтобы
                 #  было понятно что и куда ставить
 
+                # умным образом отравниваем построку по сетке
                 x = x - x % CELL_SIZE + grid.rect.x % CELL_SIZE
                 y = y - y % CELL_SIZE + grid.rect.y % CELL_SIZE
 
@@ -69,15 +69,6 @@ while running:
             if event.key == pygame.K_d:
                 player.set_going_right(False)
 
-    # Условия для ограничения выхода за пределы поля
-    if player.rect.top <= grid.rect.top:
-        player.set_going_up(False)
-    if player.rect.left <= grid.rect.left:
-        player.set_going_left(False)
-    if player.rect.right >= grid.rect.right:
-        player.set_going_right(False)
-    if player.rect.bottom >= grid.rect.bottom:
-        player.set_going_down(False)
 
     screen.fill(BACKGROUND_COLOR)
 
@@ -97,7 +88,7 @@ while running:
     buildings_group.draw(screen)
 
     # Обновляем и отрисовывем игрока
-    player_group.update()
+    player_group.update(grid, buildings_group)
     player_group.draw(screen)
 
     pygame.display.flip()

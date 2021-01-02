@@ -22,6 +22,7 @@ class Camera:
 
 class Grid(pygame.sprite.Sprite):
     # серая сетка на фоне, по которой будут выравниваться постройки.
+    # представляет из себя прозрачный surface, на котором рисуются непрозрачные линии
     def __init__(self, width, height, *groups):
         super().__init__(*groups)
         self.width = width
@@ -54,7 +55,8 @@ class Player(pygame.sprite.Sprite):
         self.going_down = False
         self.is_building = False
 
-    def update(self):
+    def update(self, grid, builings_group):
+        # сперва двигаем игрока куда он хочет
         if self.going_up:
             self.rect.y -= PLAYER_MOVEMENT_SPEED
         if self.going_left:
@@ -63,6 +65,41 @@ class Player(pygame.sprite.Sprite):
             self.rect.x += PLAYER_MOVEMENT_SPEED
         if self.going_down:
             self.rect.y += PLAYER_MOVEMENT_SPEED
+        # а потом проверяем, не столкнулся ли он с чем нибудь. если да, двигаем его назад
+        self.check_collisions(grid, builings_group)
+
+    def check_collisions(self, grid, buildings_group):
+        # Условия для ограничения выхода за пределы поля
+        if self.rect.top <= grid.rect.top:
+            self.set_going_up(False)
+        if self.rect.left <= grid.rect.left:
+            self.set_going_left(False)
+        if self.rect.right >= grid.rect.right:
+            self.set_going_right(False)
+        if self.rect.bottom >= grid.rect.bottom:
+            self.set_going_down(False)
+
+        # Проверка на столкновения с постройками
+        # берем все спрайты, с которыми столкнулся игрок
+        for building in pygame.sprite.spritecollide(self, buildings_group, False):
+            # проверяем, зашел ли игрок в спрайт. если да, останавливаем его движение и двигаем обратно
+            # смотрим для каждой стороны
+            if self.rect.bottom >= building.rect.top and self.going_down:
+                self.set_going_down(False)
+                self.rect.bottom -= PLAYER_MOVEMENT_SPEED
+
+            if self.rect.top <= building.rect.bottom and self.going_up:
+                self.set_going_up(False)
+                self.rect.top += PLAYER_MOVEMENT_SPEED
+
+            if self.rect.right >= building.rect.left and self.going_right:
+                self.set_going_right(False)
+                self.rect.right -= PLAYER_MOVEMENT_SPEED
+
+            if self.rect.left <= building.rect.right and self.going_left:
+                self.set_going_left(False)
+                self.rect.left += PLAYER_MOVEMENT_SPEED
+
 
     def set_going_up(self, going_up):
         self.going_up = going_up
@@ -84,6 +121,7 @@ class Player(pygame.sprite.Sprite):
 
 
 class BaseBuilding(pygame.sprite.Sprite):
+    # базовый класс того, что стоит на земле и не двигается
     def __init__(self, x, y, *groups):
         super().__init__(*groups)
         self.image = pygame.Surface((CELL_SIZE, CELL_SIZE))
