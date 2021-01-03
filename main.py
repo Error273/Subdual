@@ -30,26 +30,31 @@ while running:
         # если мы нажали на кнопку и сейчас можно строить
         if event.type == pygame.MOUSEBUTTONDOWN and player.get_is_building():
             x, y = event.pos
-            # проверяем, строим ли мы внутри карты
-            if grid.rect.top <= y <= grid.rect.bottom - CELL_SIZE and \
-                    grid.rect.left <= x < grid.rect.right - CELL_SIZE:
+            if event.button == 1: # если нажали на левую кнопку, то ставим построку
+                # проверяем, строим ли мы внутри карты
+                if grid.rect.top <= y <= grid.rect.bottom - CELL_SIZE and \
+                        grid.rect.left <= x < grid.rect.right - CELL_SIZE:
 
-                # привязываем постройку к сетке
-                # TODO: показывать здание перед постройкой, отцентрированное по мыши с уменьшенной прозрачностью, чтобы
-                #  было понятно что и куда ставить
+                    # привязываем постройку к сетке
+                    # TODO: показывать здание перед постройкой, отцентрированное по мыши с уменьшенной прозрачностью, чтобы
+                    #  было понятно что и куда ставить
 
-                # умным образом отравниваем построку по сетке
-                # FIXME: не всегда хорошо работает
-                x = x - x % CELL_SIZE + grid.rect.x % CELL_SIZE
-                y = y - y % CELL_SIZE + grid.rect.y % CELL_SIZE
+                    # умным образом отравниваем построку по сетке
+                    # FIXME: не всегда хорошо работает
+                    x = x - x % CELL_SIZE + grid.rect.x % CELL_SIZE
+                    y = y - y % CELL_SIZE + grid.rect.y % CELL_SIZE
 
-                building = WoodenFence(x, y, buildings_group, all_sprites)
-                # проверяем, сколько объектов находится на месте постройки. пропускаем 2 потому, что это сетка и
-                # (почему - то) сама постройка
-                if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
-                    # удаляем построку совсем
-                    building.kill()
+                    building = WoodenFence(x, y, buildings_group, all_sprites)
+                    # проверяем, сколько объектов находится на месте постройки. пропускаем 2 потому, что это сетка и
+                    # (почему - то) сама постройка
+                    if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
+                        # удаляем построку совсем
+                        building.kill()
 
+            elif event.button == 3: # если нажали на правую кнопку мыши, то построку стоит удалить
+                for building in buildings_group:
+                    if building.rect.collidepoint(x, y):
+                        building.kill()
 
         if event.type == pygame.KEYDOWN:
             # если нажата клавиша вниз, то начинаем движение
@@ -61,7 +66,7 @@ while running:
                 player.set_going_down(True)
             if event.key == pygame.K_d and player.rect.x < grid.width * CELL_SIZE:
                 player.set_going_right(True)
-            # если нажали на клавишу один, то переключаем режим строительства
+            # если нажали на клавишу 1, то переключаем режим строительства
             if event.key == pygame.K_1:
                 player.set_is_building(not player.get_is_building())
 
