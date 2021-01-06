@@ -1,4 +1,5 @@
 from classes import *
+import random
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
@@ -15,6 +16,22 @@ grid = Grid(100, 100, all_sprites)
 
 player = Player(400, 400, all_sprites, player_group)
 
+
+# генерируем камни
+for _ in range(ROCKS_AMOUNT):
+    x, y = random.randint(0, grid.width * CELL_SIZE - 75), random.randint(0, grid.height * CELL_SIZE - 75)  # вычитаем
+    # 75 и 75, так как мы не хотим, чтобы камень выходило за границы поля
+    rock = Rock(x, y, all_sprites, buildings_group)
+
+
+# генерируем деревья
+for _ in range(TREES_AMOUNT):
+    x, y = random.randint(0, grid.width * CELL_SIZE - 50), random.randint(0, grid.height * CELL_SIZE - 75)  # вычитаем
+    # 50 и 75, так как мы не хотим, чтобы дерево выходило за границы поля
+    tree = Tree(x, y, buildings_group, all_sprites)
+
+
+
 camera = Camera()
 
 while running:
@@ -27,34 +44,55 @@ while running:
             running = False
             continue
 
-        # если мы нажали на кнопку и сейчас можно строить
-        if event.type == pygame.MOUSEBUTTONDOWN and player.get_is_building():
+        # если мы нажали на кнопку мыши
+        if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
-            if event.button == 1: # если нажали на левую кнопку, то ставим построку
-                # проверяем, строим ли мы внутри карты
-                if grid.rect.top <= y <= grid.rect.bottom - CELL_SIZE and \
-                        grid.rect.left <= x < grid.rect.right - CELL_SIZE:
+            # если сейчас можно строить
+            if player.get_is_building():
+                if event.button == 1:  # если нажали на левую кнопку
+                    # проверяем, строим ли мы внутри карты
+                    if grid.rect.top <= y <= grid.rect.bottom - CELL_SIZE and \
+                            grid.rect.left <= x < grid.rect.right - CELL_SIZE:
 
-                    # привязываем постройку к сетке
-                    # TODO: показывать здание перед постройкой, отцентрированное по мыши с уменьшенной прозрачностью, чтобы
-                    #  было понятно что и куда ставить
+                        # привязываем постройку к сетке
+                        # TODO: показывать здание перед постройкой, отцентрированное по мыши с уменьшенной прозрачностью, чтобы
+                        #  было понятно что и куда ставить
 
-                    # умным образом отравниваем построку по сетке
-                    # FIXME: не всегда хорошо работает
-                    x = x - x % CELL_SIZE + grid.rect.x % CELL_SIZE
-                    y = y - y % CELL_SIZE + grid.rect.y % CELL_SIZE
+                        # умным образом отравниваем построку по сетке
+                        # FIXME: не всегда хорошо работает
+                        x = x - x % CELL_SIZE + grid.rect.x % CELL_SIZE
+                        y = y - y % CELL_SIZE + grid.rect.y % CELL_SIZE
 
-                    building = WoodenFence(x, y, buildings_group, all_sprites)
-                    # проверяем, сколько объектов находится на месте постройки. пропускаем 2 потому, что это сетка и
-                    # (почему - то) сама постройка
-                    if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
-                        # удаляем построку совсем
-                        building.kill()
+                        building = WoodenFence(x, y, buildings_group, all_sprites)
+                        # проверяем, сколько объектов находится на месте постройки. пропускаем 2 потому, что это сетка и
+                        # (почему - то) сама постройка
+                        if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
+                            # удаляем построку совсем
+                            building.kill()
 
-            elif event.button == 3: # если нажали на правую кнопку мыши, то построку стоит удалить
+                elif event.button == 3:  # если нажали на правую кнопку мыши, то построку стоит удалить
+                    for building in buildings_group:
+                        if building.rect.collidepoint(x, y) and building.building_type == 'PlayerBuilding':
+                            building.kill()
+
+            if event.button == 1:
+                # смотрим, на какую постройку мы нажали. вносим игроку данные о добываемом объекте.
                 for building in buildings_group:
-                    if building.rect.collidepoint(x, y):
-                        building.kill()
+                    # начинаем добычу только если добываем дерево/камень и если сейчас не строим
+                    if building.rect.collidepoint(x, y) and building.building_type == 'GeneratedBuilding' and\
+                            not player.get_is_building():
+                        player.set_mining_instance(building)
+                        # в этой функции проверяем, можно ли добывать этот объект
+                        player.check_can_mine()
+
+        # если отпустили мышку, то прекращаем всю добычу
+        if event.type == pygame.MOUSEBUTTONUP:
+            player.set_mining_instance(None)
+
+        # игроку нужно знать где находится мышка для того, чтобы знать, находится ли она на добываемом объекте
+        if event.type == pygame.MOUSEMOTION:
+            player.set_mouse_pos(event.pos)
+
 
         if event.type == pygame.KEYDOWN:
             # если нажата клавиша вниз, то начинаем движение
@@ -66,6 +104,7 @@ while running:
                 player.set_going_down(True)
             if event.key == pygame.K_d and player.rect.x < grid.width * CELL_SIZE:
                 player.set_going_right(True)
+
             # если нажали на клавишу 1, то переключаем режим строительства
             if event.key == pygame.K_1:
                 player.set_is_building(not player.get_is_building())
@@ -81,8 +120,8 @@ while running:
             if event.key == pygame.K_d:
                 player.set_going_right(False)
 
-
     screen.fill(BACKGROUND_COLOR)
+    print(player.inventory)
 
     # FIXME: при движении игрок сам сдвигается в сторону движения, то есть его координаты на экране меняются (а они не
     # должны, так как камерой мы фокусим игрока)
@@ -98,6 +137,7 @@ while running:
     # отрисовываем все постройки
     buildings_group.update()
     buildings_group.draw(screen)
+
 
     # Обновляем и отрисовывем игрока
     player_group.update(grid, buildings_group)
