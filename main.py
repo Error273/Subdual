@@ -1,5 +1,4 @@
 from classes import *
-import random
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
@@ -14,23 +13,20 @@ buildings_group = pygame.sprite.Group()
 
 grid = Grid(100, 100, all_sprites)
 
-player = Player(400, 400, all_sprites, player_group)
-
-
 # генерируем камни
 for _ in range(ROCKS_AMOUNT):
-    x, y = random.randint(0, grid.width * CELL_SIZE - 75), random.randint(0, grid.height * CELL_SIZE - 75)  # вычитаем
-    # 75 и 75, так как мы не хотим, чтобы камень выходило за границы поля
-    rock = Rock(x, y, all_sprites, buildings_group)
-
+    # вычитаем 75 и 75, так как мы не хотим, чтобы камень выходило за границы поля
+    rock = spawn_object(Rock, grid.width * CELL_SIZE - 75, grid.height * CELL_SIZE - 75, buildings_group,
+                        buildings_group, all_sprites)
 
 # генерируем деревья
 for _ in range(TREES_AMOUNT):
-    x, y = random.randint(0, grid.width * CELL_SIZE - 50), random.randint(0, grid.height * CELL_SIZE - 75)  # вычитаем
-    # 50 и 75, так как мы не хотим, чтобы дерево выходило за границы поля
-    tree = Tree(x, y, buildings_group, all_sprites)
+    # вычитаем 50 и 75, так как мы не хотим, чтобы дерево выходило за границы поля
+    tree = spawn_object(Tree, grid.width * CELL_SIZE - 50, grid.height * CELL_SIZE - 75, buildings_group,
+                        buildings_group, all_sprites)
 
-
+player = spawn_object(Player, grid.width * CELL_SIZE - 25, grid.height * CELL_SIZE - 50, buildings_group, all_sprites,
+                      player_group)
 
 camera = Camera()
 
@@ -42,6 +38,7 @@ while running:
         if event.type == pygame.QUIT:
             # если нажали на крестик, выходим
             running = False
+            terminate()
             continue
 
         # если мы нажали на кнопку мыши
@@ -55,8 +52,8 @@ while running:
                             grid.rect.left <= x < grid.rect.right - CELL_SIZE:
 
                         # привязываем постройку к сетке
-                        # TODO: показывать здание перед постройкой, отцентрированное по мыши с уменьшенной прозрачностью, чтобы
-                        #  было понятно что и куда ставить
+                        # TODO: показывать здание перед постройкой, отцентрированное по мыши с уменьшенной
+                        #  прозрачностью, чтобы было понятно что и куда ставить
 
                         # умным образом отравниваем построку по сетке
                         # FIXME: не всегда хорошо работает
@@ -79,7 +76,7 @@ while running:
                 # смотрим, на какую постройку мы нажали. вносим игроку данные о добываемом объекте.
                 for building in buildings_group:
                     # начинаем добычу только если добываем дерево/камень и если сейчас не строим
-                    if building.rect.collidepoint(x, y) and building.building_type == 'GeneratedBuilding' and\
+                    if building.rect.collidepoint(x, y) and building.building_type == 'GeneratedBuilding' and \
                             not player.get_is_building():
                         player.set_mining_instance(building)
                         # в этой функции проверяем, можно ли добывать этот объект
@@ -92,7 +89,6 @@ while running:
         # игроку нужно знать где находится мышка для того, чтобы знать, находится ли она на добываемом объекте
         if event.type == pygame.MOUSEMOTION:
             player.set_mouse_pos(event.pos)
-
 
         if event.type == pygame.KEYDOWN:
             # если нажата клавиша вниз, то начинаем движение
@@ -137,7 +133,6 @@ while running:
     # отрисовываем все постройки
     buildings_group.update()
     buildings_group.draw(screen)
-
 
     # Обновляем и отрисовывем игрока
     player_group.update(grid, buildings_group)

@@ -1,8 +1,8 @@
-import pygame
 import os
-import random
+
 from constants import *
 from functions import *
+
 
 class Camera:
     # зададим начальный сдвиг камеры
@@ -69,7 +69,8 @@ class Player(pygame.sprite.Sprite):
 
         self.is_building = False
 
-        # объект, который мы сейчас добываем. его необходимо держать в классе для того, чтобы измерять до него расстояние
+        # объект, который мы сейчас добываем. его необходимо держать в классе для того,
+        # чтобы измерять до него расстояние
         self.mining_instance = None
 
         # инвентарь игрока. удобно держать его в виде словаря
@@ -78,7 +79,6 @@ class Player(pygame.sprite.Sprite):
 
         # тики игрока, необходимы для внутренних таймеров
         self.ticks = 0
-
 
     def update(self, grid, builings_group):
         self.ticks += 1
@@ -95,7 +95,6 @@ class Player(pygame.sprite.Sprite):
         # а потом проверяем, не столкнулся ли он с чем нибудь. если да, двигаем его назад
         self.check_collisions(grid, builings_group)
 
-
         # перед тем, как зачислить игроку ресурс, нужно проверить, можно ли его добывать
         self.check_can_mine()
         # если у нас есть ресурс для добычи и мы попали в тайминг для добычи
@@ -104,7 +103,6 @@ class Player(pygame.sprite.Sprite):
                 self.inventory['wood'] += 1
             elif self.mining_instance.type == 'Rock' and self.ticks % MINING_SPEED == 0:
                 self.inventory['stones'] += 1
-
 
     def check_collisions(self, grid, buildings_group):
         # Условия для ограничения выхода за пределы поля
@@ -127,19 +125,19 @@ class Player(pygame.sprite.Sprite):
         for building in pygame.sprite.spritecollide(self, buildings_group, False):
             # проверяем, зашел ли игрок в спрайт. если да, останавливаем его движение и двигаем обратно
             # смотрим для каждой стороны
-            if self.rect.bottom >= building.rect.top and self.going_down:
+            if self.rect.bottom > building.rect.top and self.going_down:
                 self.set_going_down(False)
                 self.rect.bottom -= PLAYER_MOVEMENT_SPEED
 
-            if self.rect.top <= building.rect.bottom and self.going_up:
+            if self.rect.top < building.rect.bottom and self.going_up:
                 self.set_going_up(False)
                 self.rect.top += PLAYER_MOVEMENT_SPEED
 
-            if self.rect.right >= building.rect.left and self.going_right:
+            if self.rect.right > building.rect.left and self.going_right:
                 self.set_going_right(False)
                 self.rect.right -= PLAYER_MOVEMENT_SPEED
 
-            if self.rect.left <= building.rect.right and self.going_left:
+            if self.rect.left < building.rect.right and self.going_left:
                 self.set_going_left(False)
                 self.rect.left += PLAYER_MOVEMENT_SPEED
 
@@ -149,7 +147,6 @@ class Player(pygame.sprite.Sprite):
         if self.mining_instance and not (get_distance(self, self.mining_instance) <= MINING_DISTANCE and
                                          self.mining_instance.rect.collidepoint(*self.mouse_pos)):
             self.mining_instance = None
-
 
     def set_going_up(self, going_up):
         self.going_up = going_up
@@ -174,7 +171,6 @@ class Player(pygame.sprite.Sprite):
 
     def set_mouse_pos(self, pos):
         self.mouse_pos = pos
-
 
 
 class BaseBuilding(pygame.sprite.Sprite):
@@ -215,7 +211,8 @@ class Tree(GeneratedBuilding):
 class Rock(GeneratedBuilding):
     def __init__(self, x, y, *groups):
         super().__init__(x, y, *groups)
-        self.image = pygame.image.load(os.path.join('Images', 'rock.png'))
+        self.images = ['rock.png', 'rock_small.png']
+        self.image = pygame.image.load(os.path.join('Images', random.choice(self.images)))
         self.rect = self.image.get_rect().move(x, y)
         self.type = 'Rock'
 
