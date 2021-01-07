@@ -11,6 +11,8 @@ all_sprites = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 buildings_group = pygame.sprite.Group()
 
+current_building = None
+
 grid = Grid(100, 100, all_sprites)
 
 # генерируем камни
@@ -52,15 +54,12 @@ while running:
                             grid.rect.left <= x < grid.rect.right - CELL_SIZE:
 
                         # привязываем постройку к сетке
-                        # TODO: показывать здание перед постройкой, отцентрированное по мыши с уменьшенной
-                        #  прозрачностью, чтобы было понятно что и куда ставить
-
                         # умным образом отравниваем построку по сетке
                         # FIXME: не всегда хорошо работает
                         x = x - x % CELL_SIZE + grid.rect.x % CELL_SIZE
                         y = y - y % CELL_SIZE + grid.rect.y % CELL_SIZE
 
-                        building = WoodenFence(x, y, buildings_group, all_sprites)
+                        building = player.type_of_building(x, y, buildings_group, all_sprites)
                         # проверяем, сколько объектов находится на месте постройки. пропускаем 2 потому, что это сетка и
                         # (почему - то) сама постройка
                         if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
@@ -127,8 +126,16 @@ while running:
         camera.apply(sprite)
 
     # показываем сетку только если сейчас можно строить
+    # показываем наполовину прозрачное изображение выбранной постройки с координатами курсора мыши
     if player.get_is_building():
         grid.draw(screen)
+        if current_building is None:
+            current_building = player.type_of_building(-100, -100, buildings_group, all_sprites)
+        current_building.rect.x = pygame.mouse.get_pos()[0] - 12.5
+        current_building.rect.y = pygame.mouse.get_pos()[1] - 12.5
+        current_building.image.set_alpha(128)
+    elif current_building is not None:
+        current_building.kill()
 
     # отрисовываем все постройки
     buildings_group.update()

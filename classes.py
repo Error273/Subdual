@@ -68,6 +68,7 @@ class Player(pygame.sprite.Sprite):
         self.going_down = False
 
         self.is_building = False
+        self.type_of_building = WoodenFence
 
         # объект, который мы сейчас добываем. его необходимо держать в классе для того,
         # чтобы измерять до него расстояние
