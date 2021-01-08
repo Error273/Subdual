@@ -1,6 +1,5 @@
 import os
 
-from constants import *
 from functions import *
 
 
@@ -67,8 +66,9 @@ class Player(pygame.sprite.Sprite):
         self.going_up = False
         self.going_down = False
 
-        self.is_building = False
-        self.type_of_building = WoodenFence
+        # класс постройки, которую мы предположительно строим. здесь что-то оказыватся только при нажатии клавиш,
+        # отвечающих за включение режима строительства какого-то объекта
+        self.potential_building = None
 
         # объект, который мы сейчас добываем. его необходимо держать в классе для того,
         # чтобы измерять до него расстояние
@@ -161,17 +161,20 @@ class Player(pygame.sprite.Sprite):
     def set_going_right(self, going_right):
         self.going_right = going_right
 
-    def set_is_building(self, is_building):
-        self.is_building = is_building
+    def set_potential_building(self, potential_building):
+        self.potential_building = potential_building
 
-    def get_is_building(self):
-        return self.is_building
+    def get_potential_building(self):
+        return self.potential_building
 
     def set_mining_instance(self, mining_instance):
         self.mining_instance = mining_instance
 
     def set_mouse_pos(self, pos):
         self.mouse_pos = pos
+
+    def get_mouse_pos(self):
+        return self.mouse_pos
 
 
 class BaseBuilding(pygame.sprite.Sprite):

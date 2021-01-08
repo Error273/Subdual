@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 from math import sqrt
+from constants import *
 
 
 def get_distance(obj1, obj2):
@@ -40,3 +41,8 @@ def terminate():
     # выходит из программы
     pygame.quit()
     sys.exit()
+
+
+def align_building(x, y, grid):
+    # отравнивает потенциальную постройку по сетке с учетом курсора
+    return x - x % CELL_SIZE + grid.rect.x % CELL_SIZE, y - y % CELL_SIZE + grid.rect.y % CELL_SIZE
