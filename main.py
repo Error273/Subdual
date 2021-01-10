@@ -59,7 +59,7 @@ while running:
                     if grid.rect.top <= y <= grid.rect.bottom - building_shadow.get_height() and \
                             grid.rect.left <= x <= grid.rect.right - building_shadow.get_width():
 
-                        building = WoodenFence(x, y, buildings_group, all_sprites)
+                        building = player.get_potential_building()(x, y, buildings_group, all_sprites)
                         # проверяем, сколько объектов находится на месте постройки. пропускаем 2 потому, что это сетка и
                         # сама постройка
                         if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
@@ -101,11 +101,14 @@ while running:
                 player.set_going_right(True)
 
             # если нажали на клавишу 1, то переключаем режим строительства деревянного забора
-            if event.key == pygame.K_1:
+            if event.key in range(pygame.K_1, pygame.K_2 + 1):
                 if player.get_potential_building():
                     player.set_potential_building(None)
                 else:
-                    player.set_potential_building(WoodenFence)
+                    if event.key == pygame.K_1:
+                        player.set_potential_building(WoodenFence)
+                    elif event.key == pygame.K_2:
+                        player.set_potential_building(DoubleBarrelTurret)
                     building_shadow = player.get_potential_building()(0, 0).image
                     building_shadow.set_alpha(128)
 
@@ -121,7 +124,6 @@ while running:
                 player.set_going_right(False)
 
     screen.fill(BACKGROUND_COLOR)
-    print(player.inventory)
 
     # FIXME: при движении игрок сам сдвигается в сторону движения, то есть его координаты на экране меняются (а они не
     # должны, так как камерой мы фокусим игрока)

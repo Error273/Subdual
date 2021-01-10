@@ -1,6 +1,7 @@
 import os
 
 from functions import *
+from random import randint
 
 
 class Camera:
@@ -226,3 +227,56 @@ class WoodenFence(PlayerBuilding):
         super().__init__(x, y, *groups)
         self.image = pygame.image.load(os.path.join('Images', 'Стена 1.png'))
         self.rect = self.image.get_rect().move(x, y)
+
+
+class DoubleBarrelTurret(PlayerBuilding):
+    def __init__(self, x, y, *groups):
+        super().__init__(x, y, *groups)
+        self.images = [[pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', 'down', i))
+                           for i in ['double_barrel_turret_shoot_left.png',
+                           'double_barrel_turret.png',
+                           'double_barrel_turret_shoot_right.png',
+                           'double_barrel_turret.png']],
+                       [pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', 'left', i))
+                        for i in ['double_barrel_turret_shoot_left.png',
+                                  'double_barrel_turret.png',
+                                  'double_barrel_turret_shoot_right.png',
+                                  'double_barrel_turret.png']],
+                       [pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', 'up', i))
+                        for i in ['double_barrel_turret_shoot_left.png',
+                                  'double_barrel_turret.png',
+                                  'double_barrel_turret_shoot_right.png',
+                                  'double_barrel_turret.png']],
+                       [pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', 'right', i))
+                        for i in ['double_barrel_turret_shoot_left.png',
+                                  'double_barrel_turret.png',
+                                  'double_barrel_turret_shoot_right.png',
+                                  'double_barrel_turret.png']],
+                       ]
+        self.animation_counter = 3
+        self.rotation_position = randint(0, 3)
+        self.shooting = bool(random.randint(0, 1))
+
+        self.image = self.images[self.rotation_position][self.animation_counter]
+
+        self.rect = self.image.get_rect().move(x, y)
+
+        self.ticks = 0
+
+    def update(self):
+        self.ticks += 1
+        if self.ticks % 5 == 0:
+            self.animation_counter = (self.animation_counter + 1) % len(self.images[self.animation_counter])
+            self.image = self.images[self.rotation_position][self.animation_counter]
+
+            if not self.shooting:
+                self.image = self.images[self.rotation_position][1]
+            else:
+                if self.rotation_position == 1 and (self.animation_counter in (0, 2)):
+                    self.rect.x -= 4
+                elif self.rotation_position == 1 and (self.animation_counter in (1, 3)):
+                    self.rect.x += 4
+                elif self.rotation_position == 2 and (self.animation_counter in (0, 2)):
+                    self.rect.y -= 4
+                elif self.rotation_position == 2 and (self.animation_counter in (1, 3)):
+                    self.rect.y += 4
