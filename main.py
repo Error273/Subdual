@@ -14,7 +14,6 @@ buildings_group = pygame.sprite.Group()
 # "тень" здания, которое мы собираемся построить
 building_shadow = None
 
-
 grid = Grid(100, 100, all_sprites)
 
 # генерируем камни
@@ -59,7 +58,7 @@ while running:
                     if grid.rect.top <= y <= grid.rect.bottom - building_shadow.get_height() and \
                             grid.rect.left <= x <= grid.rect.right - building_shadow.get_width():
 
-                        building = WoodenFence(x, y, buildings_group, all_sprites)
+                        building = player.get_potential_building()(x, y, buildings_group, all_sprites)
                         # проверяем, сколько объектов находится на месте постройки. пропускаем 2 потому, что это сетка и
                         # сама постройка
                         if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
@@ -100,13 +99,20 @@ while running:
             if event.key == pygame.K_d and player.rect.x < grid.width * CELL_SIZE:
                 player.set_going_right(True)
 
-            # если нажали на клавишу 1, то переключаем режим строительства деревянного забора
-            if event.key == pygame.K_1:
-                if player.get_potential_building():
+            # если нажали на кнопку, отмеченную для строительства
+            if event.key in range(pygame.K_1, pygame.K_2 + 1):
+                if player.get_potential_building(): # если режим строительства уже включен, то его нужно выключить
                     player.set_potential_building(None)
                 else:
-                    player.set_potential_building(WoodenFence)
+                    # выбираем забор
+                    if event.key == pygame.K_1:
+                        player.set_potential_building(WoodenFence)
+                    # выбираем турель
+                    elif event.key == pygame.K_2:
+                        player.set_potential_building(DoubleBarrelTurret)
+                    # устанавливаем тень выбранной постройки перед строительством
                     building_shadow = player.get_potential_building()(0, 0).image
+                    # увеличиваем прозрачность
                     building_shadow.set_alpha(128)
 
         if event.type == pygame.KEYUP:
@@ -121,7 +127,6 @@ while running:
                 player.set_going_right(False)
 
     screen.fill(BACKGROUND_COLOR)
-    print(player.inventory)
 
     # FIXME: при движении игрок сам сдвигается в сторону движения, то есть его координаты на экране меняются (а они не
     # должны, так как камерой мы фокусим игрока)
@@ -139,7 +144,7 @@ while running:
         screen.blit(building_shadow, align_building(*player.get_mouse_pos(), grid))
 
     # отрисовываем все постройки
-    buildings_group.update()
+    buildings_group.update(player) # пока в качестве цели для турели возьмем игрока
     buildings_group.draw(screen)
 
     # Обновляем и отрисовывем игрока
