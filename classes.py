@@ -232,51 +232,59 @@ class WoodenFence(PlayerBuilding):
 class DoubleBarrelTurret(PlayerBuilding):
     def __init__(self, x, y, *groups):
         super().__init__(x, y, *groups)
-        self.images = [[pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', 'down', i))
-                           for i in ['double_barrel_turret_shoot_left.png',
-                           'double_barrel_turret.png',
-                           'double_barrel_turret_shoot_right.png',
-                           'double_barrel_turret.png']],
-                       [pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', 'left', i))
+        # прогружаем все картинки с анимациями
+        # представляем из себя двухмерный массив, где первая строка - это анимации стрельбы вниз, вторая влево,
+        # третья вверх, четвертая вниз
+        self.images = [[pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', j, i))
                         for i in ['double_barrel_turret_shoot_left.png',
                                   'double_barrel_turret.png',
                                   'double_barrel_turret_shoot_right.png',
-                                  'double_barrel_turret.png']],
-                       [pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', 'up', i))
-                        for i in ['double_barrel_turret_shoot_left.png',
-                                  'double_barrel_turret.png',
-                                  'double_barrel_turret_shoot_right.png',
-                                  'double_barrel_turret.png']],
-                       [pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', 'right', i))
-                        for i in ['double_barrel_turret_shoot_left.png',
-                                  'double_barrel_turret.png',
-                                  'double_barrel_turret_shoot_right.png',
-                                  'double_barrel_turret.png']],
+                                  'double_barrel_turret.png']] for j in ('down', 'left', 'up', 'right')
                        ]
+        # на каком кадре анимации мы сейчас находимся. 3 - это покой
         self.animation_counter = 3
-        self.rotation_position = randint(0, 3)
-        self.shooting = bool(random.randint(0, 1))
+        # в какую сторону направлена турель. 0 - вниз, ...,  3 - вправо
+        self.rotation_position = 0
 
+        # стреляет ли сейчас турель
+        self.shooting = False
+
+        # ставим картинку
         self.image = self.images[self.rotation_position][self.animation_counter]
-
         self.rect = self.image.get_rect().move(x, y)
 
         self.ticks = 0
 
-    def update(self):
+        # минимальный радиус до цели, с которого можно стрелять
+        self.shooting_radius = 200
+
+        # с какой скоростью ведется стрельба
+        self.shooting_speed = 15
+
+    def update(self, target):
         self.ticks += 1
-        if self.ticks % 5 == 0:
+
+        # смотрим, достаем ли мы до цели. для тестирования стреляем в игрока
+        if get_distance(self, target) <= self.shooting_radius:
+            self.shooting = True
+        else:
+            self.shooting = False
+        # если попали в тайминг смены кадра
+        if self.ticks % self.shooting_speed == 0:
+            # меняем кадр анимации и переопределяем изображение
             self.animation_counter = (self.animation_counter + 1) % len(self.images[self.animation_counter])
             self.image = self.images[self.rotation_position][self.animation_counter]
 
+            # если сейчас не стреляем, устанавливаем кадр покоя
             if not self.shooting:
                 self.image = self.images[self.rotation_position][1]
             else:
-                if self.rotation_position == 1 and (self.animation_counter in (0, 2)):
-                    self.rect.x -= 4
-                elif self.rotation_position == 1 and (self.animation_counter in (1, 3)):
-                    self.rect.x += 4
-                elif self.rotation_position == 2 and (self.animation_counter in (0, 2)):
-                    self.rect.y -= 4
-                elif self.rotation_position == 2 and (self.animation_counter in (1, 3)):
-                    self.rect.y += 4
+                # если стреляем, то смотрим, в какой стороне от турели находится цель, и туда разворачиваемся
+                if target.rect.right < self.rect.left:
+                    self.rotation_position = 1
+                elif target.rect.left > self.rect.right:
+                    self.rotation_position = 3
+                elif target.rect.bottom > self.rect.top:
+                    self.rotation_position = 0
+                elif target.rect.top < self.rect.bottom:
+                    self.rotation_position = 2

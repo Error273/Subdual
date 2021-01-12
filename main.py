@@ -14,7 +14,6 @@ buildings_group = pygame.sprite.Group()
 # "тень" здания, которое мы собираемся построить
 building_shadow = None
 
-
 grid = Grid(100, 100, all_sprites)
 
 # генерируем камни
@@ -100,16 +99,20 @@ while running:
             if event.key == pygame.K_d and player.rect.x < grid.width * CELL_SIZE:
                 player.set_going_right(True)
 
-            # если нажали на клавишу 1, то переключаем режим строительства деревянного забора
+            # если нажали на кнопку, отмеченную для строительства
             if event.key in range(pygame.K_1, pygame.K_2 + 1):
-                if player.get_potential_building():
+                if player.get_potential_building(): # если режим строительства уже включен, то его нужно выключить
                     player.set_potential_building(None)
                 else:
+                    # выбираем забор
                     if event.key == pygame.K_1:
                         player.set_potential_building(WoodenFence)
+                    # выбираем турель
                     elif event.key == pygame.K_2:
                         player.set_potential_building(DoubleBarrelTurret)
+                    # устанавливаем тень выбранной постройки перед строительством
                     building_shadow = player.get_potential_building()(0, 0).image
+                    # увеличиваем прозрачность
                     building_shadow.set_alpha(128)
 
         if event.type == pygame.KEYUP:
@@ -141,7 +144,7 @@ while running:
         screen.blit(building_shadow, align_building(*player.get_mouse_pos(), grid))
 
     # отрисовываем все постройки
-    buildings_group.update()
+    buildings_group.update(player) # пока в качестве цели для турели возьмем игрока
     buildings_group.draw(screen)
 
     # Обновляем и отрисовывем игрока
