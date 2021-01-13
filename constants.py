@@ -1,5 +1,5 @@
 # размер окна
-SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 800, 600
+SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 1000, 900
 
 # размер одной клетки. изменять нельзя, нужен для легкости чтения кода.
 CELL_SIZE = 25
@@ -18,3 +18,10 @@ ROCKS_AMOUNT = 15
 MINING_DISTANCE = 100
 # скорость добычи ресурсов (сколько тактов должно пройти, чтобы ресурс добавился в инвентарь)
 MINING_SPEED = 10
+
+# Количество типов построек
+AMOUNT_OF_BUILDINGS = 2
+# Начальные координаты слоя для типов построек
+BUILDING_CHOICE_SURFACE_COORDS = (SIZE[0] // 2 - 65 * AMOUNT_OF_BUILDINGS // 2, SIZE[1] - 120)
+
+DAYTIME = 100

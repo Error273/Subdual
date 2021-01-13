@@ -1,6 +1,8 @@
 import pygame
 import sys
 import random
+import os
+
 from math import sqrt
 from constants import *
 
@@ -46,3 +48,22 @@ def terminate():
 def align_building(x, y, grid):
     # отравнивает потенциальную постройку по сетке с учетом курсора
     return x - x % CELL_SIZE + grid.rect.x % CELL_SIZE, y - y % CELL_SIZE + grid.rect.y % CELL_SIZE
+
+
+# Функция для загрузки изображения
+def load_image(name, color_key=None):
+    print(name)
+    fullname = os.path.join('Images', name)
+    try:
+        image = pygame.image.load(fullname).convert()
+    except pygame.error as message:
+        print('Cannot load image:', name)
+        raise SystemExit(message)
+
+    if color_key is not None:
+        if color_key == -1:
+            color_key = image.get_at((0, 0))
+        image.set_colorkey(color_key)
+    else:
+        image = image.convert_alpha()
+    return image
