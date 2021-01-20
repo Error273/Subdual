@@ -23,9 +23,9 @@ building_shadow = None
 grid = Grid(100, 100, all_sprites)
 
 # инициализация серфейсов
-gui_surface = pygame.Surface(GUI_SURFACE_SIZE, pygame.SRCALPHA, 32)
+gui_surface = pygame.Surface(SIZE, pygame.SRCALPHA, 32)
 day_night_surface = pygame.Surface(SIZE, pygame.SRCALPHA, 32)
-buildings_choice_surface = pygame.Surface((AMOUNT_OF_BUILDINGS * 100, 120), pygame.SRCALPHA, 32)
+buildings_choice_surface = pygame.Surface((2 * 100, 120), pygame.SRCALPHA, 32)
 
 # генерируем камни
 for _ in range(ROCKS_AMOUNT):
@@ -98,7 +98,6 @@ while running:
         # игроку нужно знать где находится мышка для того, чтобы знать, находится ли она на добываемом объекте
         if event.type == pygame.MOUSEMOTION:
             player.set_mouse_pos(event.pos)
-
         if event.type == pygame.KEYDOWN:
             # если нажата клавиша вниз, то начинаем движение
             if event.key == pygame.K_w and player.rect.y >= 0:
@@ -158,30 +157,40 @@ while running:
 
     # отрисовываем все постройки
     buildings_group.update(player) # пока в качестве цели для турели возьмем игрока
+    buildings_group.draw(screen)
 
     # Обновляем и отрисовывем игрока
     player_group.update(grid, buildings_group)
     player_group.draw(screen)
 
-    # TODO: Реализовать кусочную функцию, тк парабола слишком резко меняет коэффициент затемнения
     # Функция, описывающая зависимость коэффициента затемнения от времени суток
-    x = -0.2 * (daytime / 10 - 5) ** 2 + 5
+    if daytime <= 33:
+        x = 3 * daytime
+    elif 33 < daytime <= 66:
+        x = 100
+    elif daytime < 100:
+        x = -3 * daytime + 298
 
     # Затемнение поля
-    pygame.draw.rect(day_night_surface, pygame.Color(15, 32, 161, int(x) * 13), (0, 0, SIZE[0], SIZE[1]), 0)
-    buildings_group.draw(screen)
+    pygame.draw.rect(day_night_surface, pygame.Color(15, 32, 161, int(x * 0.7)), (0, 0, SIZE[0], SIZE[1]), 0)
 
+    # Расчеты, связанные с циклом дня и ночи
     tics = pygame.time.get_ticks()
-    daytime = tics // 100 // 2
-    daytime %= DAYTIME
-    if daytime == DAYTIME:
+    # Данная переменная принимает значения от 0 до 100 и в зависимости от LENGTH_OF_DAY изменяется с разной скоростью
+    daytime = tics // (LENGTH_OF_DAY // 100)
+    daytime %= 100
+    if daytime == 100:
         day_number += 1
 
+    # Отрисовка затемнения
     screen.blit(day_night_surface, (0, 0))
-    # Прорисовка hud
-    screen.blit(buildings_choice_surface, BUILDING_CHOICE_SURFACE_COORDS)
-    screen.blit(gui_surface, GUI_SURFACE_COORDS)
-    hud.draw(gui_surface, daytime, day_number, player)
+
+    # Отрисовка hud
+    screen.blit(gui_surface, (0, 0))
+    hud.draw(gui_surface, daytime, tics, player)
+
+    # Отрисовка доступных для строительства построек
+    screen.blit(buildings_choice_surface, (SIZE[0] // 2 - 65 * 2 // 2, SIZE[1] - 120))
     buildings_preset_drawer.draw(buildings_choice_surface)
 
     pygame.display.flip()

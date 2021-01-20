@@ -19,12 +19,5 @@ MINING_DISTANCE = 100
 # скорость добычи ресурсов (сколько тактов должно пройти, чтобы ресурс добавился в инвентарь)
 MINING_SPEED = 10
 
-# Количество типов построек
-AMOUNT_OF_BUILDINGS = 2
-# Начальные координаты слоя для типов построек
-BUILDING_CHOICE_SURFACE_COORDS = (SIZE[0] // 2 - 65 * AMOUNT_OF_BUILDINGS // 2, SIZE[1] - 120)
-
-GUI_SURFACE_COORDS = SIZE[0] - 150, SIZE[1] - 400
-GUI_SURFACE_SIZE = 150, 400
-
-DAYTIME = 100
+# Продолжительность дня в тиках
+LENGTH_OF_DAY = 20000
