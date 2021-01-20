@@ -1,4 +1,5 @@
-from classes import *
+from game_classes import *
+from hud_classes import *
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
@@ -22,7 +23,7 @@ building_shadow = None
 grid = Grid(100, 100, all_sprites)
 
 # инициализация серфейсов
-gui_surface = pygame.Surface((200, 500), pygame.SRCALPHA, 32)
+gui_surface = pygame.Surface(GUI_SURFACE_SIZE, pygame.SRCALPHA, 32)
 day_night_surface = pygame.Surface(SIZE, pygame.SRCALPHA, 32)
 buildings_choice_surface = pygame.Surface((AMOUNT_OF_BUILDINGS * 100, 120), pygame.SRCALPHA, 32)
 
@@ -170,7 +171,6 @@ while running:
     pygame.draw.rect(day_night_surface, pygame.Color(15, 32, 161, int(x) * 13), (0, 0, SIZE[0], SIZE[1]), 0)
     buildings_group.draw(screen)
 
-    screen.blit(gui_surface, (WINDOW_WIDTH // 2 - 200, WINDOW_HEIGHT - 100))
     tics = pygame.time.get_ticks()
     daytime = tics // 100 // 2
     daytime %= DAYTIME
@@ -180,8 +180,9 @@ while running:
     screen.blit(day_night_surface, (0, 0))
     # Прорисовка hud
     screen.blit(buildings_choice_surface, BUILDING_CHOICE_SURFACE_COORDS)
-    hud.update(screen, daytime, day_number, player)
-    buildings_preset_drawer.update(screen, buildings_choice_surface)
+    screen.blit(gui_surface, GUI_SURFACE_COORDS)
+    hud.draw(gui_surface, daytime, day_number, player)
+    buildings_preset_drawer.draw(buildings_choice_surface)
 
     pygame.display.flip()
     clock.tick(60)
