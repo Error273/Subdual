@@ -164,20 +164,22 @@ while running:
     player_group.draw(screen)
 
     # Функция, описывающая зависимость коэффициента затемнения от времени суток
+    saturation_coef = 0
     if daytime <= 33:
-        x = 3 * daytime
+        saturation_coef = 3 * daytime
     elif 33 < daytime <= 66:
-        x = 100
+        saturation_coef = 100
     elif daytime < 100:
-        x = -3 * daytime + 298
+        saturation_coef = -3 * daytime + 298
+    saturation_coef *= 0.7
 
     # Затемнение поля
-    pygame.draw.rect(day_night_surface, pygame.Color(15, 32, 161, int(x * 0.7)), (0, 0, SIZE[0], SIZE[1]), 0)
+    pygame.draw.rect(day_night_surface, pygame.Color(15, 32, 161, int(saturation_coef)), (0, 0, SIZE[0], SIZE[1]), 0)
 
     # Расчеты, связанные с циклом дня и ночи
     tics = pygame.time.get_ticks()
     # Данная переменная принимает значения от 0 до 100 и в зависимости от LENGTH_OF_DAY изменяется с разной скоростью
-    daytime = tics // (LENGTH_OF_DAY // 100)
+    daytime = tics // (LENGTH_OF_THE_DAY // 100)
     daytime %= 100
     if daytime == 100:
         day_number += 1

@@ -30,9 +30,9 @@ class Hud:
                          pygame.Color((255, 255, 255)),
                          (SIZE[0] - 125 + daytime, SIZE[1] - 131, 6, 17), 0)
 
-        text = self.font.render("Day " + str(tics // LENGTH_OF_DAY + 1), 1, pygame.color.Color('white'))
+        text = self.font.render("Day " + str(tics // LENGTH_OF_THE_DAY + 1), 1, pygame.color.Color('white'))
         text_rect = text.get_rect()
-        text_rect.x = SIZE[0] - 80
+        text_rect.x = SIZE[0] - 120
         text_rect.y = SIZE[1] - 150
         surface.blit(text, text_rect)
 

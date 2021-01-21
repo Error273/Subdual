@@ -20,4 +20,4 @@ MINING_DISTANCE = 100
 MINING_SPEED = 10
 
 # Продолжительность дня в тиках
-LENGTH_OF_DAY = 20000
+LENGTH_OF_THE_DAY = 20000
