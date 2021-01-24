@@ -15,7 +15,7 @@ player_group = pygame.sprite.Group()
 buildings_group = pygame.sprite.Group()
 
 hud = Hud()
-buildings_preset_drawer = DrawBuildingsPresets()
+buildings_preset_drawer = BuildingsPresetsDrawer()
 
 # "тень" здания, которое мы собираемся построить
 building_shadow = None
@@ -112,7 +112,7 @@ while running:
             # если нажали на кнопку, отмеченную для строительства
             if event.key in range(pygame.K_1, pygame.K_2 + 1):
                 buildings_preset_drawer.selected_building = event.key - 48
-                if player.get_potential_building(): # если режим строительства уже включен, то его нужно выключить
+                if player.get_potential_building():  # если режим строительства уже включен, то его нужно выключить
                     buildings_preset_drawer.selected_building = 0
                     player.set_potential_building(None)
                 else:
@@ -156,7 +156,7 @@ while running:
         screen.blit(building_shadow, align_building(*player.get_mouse_pos(), grid))
 
     # отрисовываем все постройки
-    buildings_group.update(player) # пока в качестве цели для турели возьмем игрока
+    buildings_group.update(player)  # пока в качестве цели для турели возьмем игрока
     buildings_group.draw(screen)
 
     # Обновляем и отрисовывем игрока
