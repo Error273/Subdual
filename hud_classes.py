@@ -65,15 +65,33 @@ class Hud:
 
 # Класс для отрисовки серфейса выбора построек
 class DrawBuildingsPresets:
-    def __init__(self):
+    def __init__(self, player):
         # Словарь типов построек для отрисовки в hud'е
-        self.types_of_buildings = {1: load_image('Стена 1.png', -1),
-                                   2: load_image('DoubleBarrelTurretAnimations/down/double_barrel_turret.png', -1)}
+        self.types_of_buildings = {1: load_image('MainBuilding/1.png', -1),
+                                   2: load_image('Стена 1.png', -1),
+                                   3: load_image('DoubleBarrelTurretAnimations/down/double_barrel_turret.png', -1)}
         self.selected_building = 0
         self.amount_of_buildings = len(self.types_of_buildings)
         self.building_choice_surface_coords = (SIZE[0] // 2 - 65 * self.amount_of_buildings // 2, SIZE[1] - 120)
 
         self.font = pygame.font.Font(None, 20)
+
+        self.player = player
+
+    # блит на скрин текста и изображения
+    def text_and_image(self, i, surface):
+        text = self.font.render(str(i), 1, pygame.color.Color('white'))
+        text_rect = text.get_rect()
+        text_rect.x = (i - 1) * 65 + 48
+        text_rect.y = 43
+        surface.blit(text, text_rect)
+
+        image = self.types_of_buildings.get(i)
+        image = pygame.transform.scale(image, (30, 30))
+        image_rect = image.get_rect()
+        image_rect.x = 17 + 65 * (i - 1)
+        image_rect.y = 53
+        surface.blit(image, image_rect)
 
     def draw(self, surface):
         surface.fill(pygame.Color(0, 0, 0, 0))
@@ -82,16 +100,8 @@ class DrawBuildingsPresets:
                 pygame.draw.rect(surface, pygame.color.Color(128, 128, 0), (65 * (i - 1) + 5, 40, 55, 55), 5)
             else:
                 pygame.draw.rect(surface, pygame.color.Color(128, 128, 0), (65 * (i - 1) + 5, 40, 55, 55), 2)
+            self.text_and_image(i, surface)
 
-            text = self.font.render(str(i), 1, pygame.color.Color('white'))
-            text_rect = text.get_rect()
-            text_rect.x = (i - 1) * 65 + 48
-            text_rect.y = 43
-            surface.blit(text, text_rect)
-
-            image = self.types_of_buildings.get(i)
-            image = pygame.transform.scale(image, (30, 30))
-            image_rect = image.get_rect()
-            image_rect.x = 17 + 65 * (i - 1)
-            image_rect.y = 53
-            surface.blit(image, image_rect)
+        if self.player.were_placed_main_building:
+            pygame.draw.rect(surface, pygame.color.Color(128, 128, 0, 128), (5, 40, 57, 57), 0)
+            self.text_and_image(1, surface)

@@ -75,6 +75,9 @@ class Player(pygame.sprite.Sprite):
         # чтобы измерять до него расстояние
         self.mining_instance = None
 
+        # Была ли поставлена главная постройка. Проверяется для того
+        self.were_placed_main_building = False
+
         # инвентарь игрока. удобно держать его в виде словаря
         self.inventory = {'stones': 0,
                           'wood': 0}
@@ -288,3 +291,18 @@ class DoubleBarrelTurret(PlayerBuilding):
                     self.rotation_position = 0
                 elif target.rect.top < self.rect.bottom:
                     self.rotation_position = 2
+
+
+class MainBuilding(PlayerBuilding):
+    def __init__(self, x, y, *groups):
+        super().__init__(x, y, *groups)
+
+        self.list_of_images = [pygame.image.load('Images/MainBuilding/' + str(i) + '.png') for i in range(1, 4)]
+        self.image = self.list_of_images[0]
+        self.rect = self.image.get_rect().move(x, y)
+
+        self.tics = pygame.time.get_ticks()
+
+    def update(self, player):
+        self.image = self.list_of_images[self.tics // 1000 % 3]
+        self.tics = pygame.time.get_ticks()

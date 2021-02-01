@@ -14,8 +14,6 @@ all_sprites = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 buildings_group = pygame.sprite.Group()
 
-hud = Hud()
-buildings_preset_drawer = DrawBuildingsPresets()
 
 # "тень" здания, которое мы собираемся построить
 building_shadow = None
@@ -41,6 +39,9 @@ for _ in range(TREES_AMOUNT):
 
 player = spawn_object(Player, grid.width * CELL_SIZE - 25, grid.height * CELL_SIZE - 50, buildings_group, all_sprites,
                       player_group)
+
+hud = Hud()
+buildings_preset_drawer = DrawBuildingsPresets(player)
 
 camera = Camera()
 
@@ -69,7 +70,14 @@ while running:
                     if grid.rect.top <= y <= grid.rect.bottom - building_shadow.get_height() and \
                             grid.rect.left <= x <= grid.rect.right - building_shadow.get_width():
 
-                        building = player.get_potential_building()(x, y, buildings_group, all_sprites)
+                        # проверяем тип потенциальной постройки, чтобы не поставить главную постройку дважды
+                        if player.get_potential_building() == MainBuilding:
+                            if not player.were_placed_main_building:
+                                building = player.get_potential_building()(x, y, buildings_group, all_sprites)
+                                player.were_placed_main_building = True
+                        else:
+                            building = player.get_potential_building()(x, y, buildings_group, all_sprites)
+
                         # проверяем, сколько объектов находится на месте постройки. пропускаем 2 потому, что это сетка и
                         # сама постройка
                         if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
@@ -110,17 +118,22 @@ while running:
                 player.set_going_right(True)
 
             # если нажали на кнопку, отмеченную для строительства
-            if event.key in range(pygame.K_1, pygame.K_2 + 1):
+            if event.key in range(pygame.K_1, pygame.K_3 + 1):
                 buildings_preset_drawer.selected_building = event.key - 48
                 if player.get_potential_building(): # если режим строительства уже включен, то его нужно выключить
                     buildings_preset_drawer.selected_building = 0
                     player.set_potential_building(None)
+                # Проверка необходимости активации режима постройки для MainBuilding
+                elif player.were_placed_main_building and event.key == pygame.K_1:
+                    buildings_preset_drawer.selected_building = 0
                 else:
-                    # выбираем забор
                     if event.key == pygame.K_1:
+                        player.set_potential_building(MainBuilding)
+                    # выбираем забор
+                    if event.key == pygame.K_2:
                         player.set_potential_building(WoodenFence)
                     # выбираем турель
-                    elif event.key == pygame.K_2:
+                    elif event.key == pygame.K_3:
                         player.set_potential_building(DoubleBarrelTurret)
                     # устанавливаем тень выбранной постройки перед строительством
                     building_shadow = player.get_potential_building()(0, 0).image
