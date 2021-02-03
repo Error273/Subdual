@@ -1,5 +1,5 @@
 # размер окна
-SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 1000, 900
+SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 800, 800
 
 # размер одной клетки. изменять нельзя, нужен для легкости чтения кода.
 CELL_SIZE = 25

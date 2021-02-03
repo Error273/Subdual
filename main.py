@@ -83,6 +83,7 @@ while running:
                         if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
                             # удаляем построку совсем
                             building.kill()
+                            player.were_placed_main_building = False
 
                 elif event.button == 3:  # если нажали на правую кнопку мыши, то построку стоит удалить
                     for building in buildings_group:

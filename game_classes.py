@@ -75,7 +75,8 @@ class Player(pygame.sprite.Sprite):
         # чтобы измерять до него расстояние
         self.mining_instance = None
 
-        # Была ли поставлена главная постройка. Проверяется для того
+        # Была ли поставлена главная постройка. Проверяется для принятия решение о блокировке постройки
+        # и изменении слота постройки
         self.were_placed_main_building = False
 
         # инвентарь игрока. удобно держать его в виде словаря
@@ -301,8 +302,16 @@ class MainBuilding(PlayerBuilding):
         self.image = self.list_of_images[0]
         self.rect = self.image.get_rect().move(x, y)
 
+        # переменные, отвечающие за анимацию
         self.tics = pygame.time.get_ticks()
+        self.indexes = (0, 1, 2, 1, 0)
+        self.i = 0
 
     def update(self, player):
-        self.image = self.list_of_images[self.tics // 1000 % 3]
-        self.tics = pygame.time.get_ticks()
+        # Картинка меняется каждые 1000 тиков
+        if pygame.time.get_ticks() - self.tics > 1000:
+            self.image = self.list_of_images[self.indexes[self.i]]
+            self.tics = pygame.time.get_ticks()
+            self.i += 1
+        if self.i == 4:
+            self.i = 0
