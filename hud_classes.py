@@ -67,9 +67,9 @@ class Hud:
 class DrawBuildingsPresets:
     def __init__(self, player):
         # Словарь типов построек для отрисовки в hud'е
-        self.types_of_buildings = {1: load_image('MainBuilding/1.png', -1),
-                                   2: load_image('Стена 1.png', -1),
-                                   3: load_image('DoubleBarrelTurretAnimations/down/double_barrel_turret.png', -1)}
+        self.types_of_buildings = {1: load_image('MainBuilding/1.png'),
+                                   2: load_image('Стена 1.png'),
+                                   3: load_image('DoubleBarrelTurretAnimations/down/double_barrel_turret.png')}
         self.selected_building = 0
         self.amount_of_buildings = len(self.types_of_buildings)
         self.building_choice_surface_coords = (SIZE[0] // 2 - 65 * self.amount_of_buildings // 2, SIZE[1] - 120)

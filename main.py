@@ -83,11 +83,17 @@ while running:
                         if len(pygame.sprite.spritecollide(building, all_sprites, False)) > 2:
                             # удаляем построку совсем
                             building.kill()
-                            player.were_placed_main_building = False
+                            # если мы пытались построить главное здание, то нужно вернуть возмжность ее заного поставить
+                            if type(building) == MainBuilding:
+                                player.were_placed_main_building = False
+
 
                 elif event.button == 3:  # если нажали на правую кнопку мыши, то построку стоит удалить
                     for building in buildings_group:
-                        if building.rect.collidepoint(x, y) and building.building_type == 'PlayerBuilding':
+                        # находим постройку, с которой соприкасается курсор и удаляем ее, если она не главное здание
+                        # (по задумке главное здание нельзя убрать)
+                        if building.rect.collidepoint(x, y) and building.building_type == 'PlayerBuilding' and \
+                                type(building) != MainBuilding:
                             building.kill()
 
             if event.button == 1:
