@@ -1,7 +1,4 @@
-import os
-
 from functions import *
-from random import randint
 
 
 class Camera:
@@ -54,7 +51,32 @@ class Player(pygame.sprite.Sprite):
     # главный игрок
     def __init__(self, x, y, *groups):
         super().__init__(*groups)
-        self.image = pygame.image.load(os.path.join('Images', 'Гелик(стоит).png'))
+
+        # картинки для движения по всем направлениям. пришлось задавать их вручную, так как анимация похода влево-вправо
+        # отличается по длине, а так же важен порядок их добавления
+        self.animations = [[load_image(os.path.join('PlayerAnimations', 'down', i)) for i in ['1.png', 'static.png',
+                                                                                              '2.png', 'static.png']],
+                           [load_image(os.path.join('PlayerAnimations', 'left', i)) for i in ['1.png', '2.png',
+                                                                                              '3.png']],
+
+                           [load_image(os.path.join('PlayerAnimations', 'up', i)) for i in ['1.png', 'static.png',
+                                                                                            '2.png', 'static.png']],
+
+                           [load_image(os.path.join('PlayerAnimations', 'right', i)) for i in ['1.png', '2.png',
+                                                                                               '3.png']]]
+
+        # картинки для стояния
+        self.static_images = [pygame.image.load(os.path.join('Images', 'PlayerAnimations', i, 'static.png'))
+                              for i in ['down', 'left', 'up', 'right']]
+
+        # на каком кадре анимации мы сейчас находимся. 3 - это покой
+        self.animation_counter = 0
+        # в какую сторону мы идем. 0 - вниз, ...,  3 - вправо
+        self.rotation_position = 0
+
+        # текущий кадр
+        self.image = self.static_images[self.rotation_position]
+
         self.rect = self.image.get_rect().move(x, y)
 
         # игроку нужно знать позицию мыши для того, чтобы при добыче дерева/камня игрок всегда держал мышь на объекте.
@@ -91,14 +113,32 @@ class Player(pygame.sprite.Sprite):
 
         # сперва двигаем игрока куда он хочет
         if self.going_up:
+            # поворачиваем спрайт игрока
+            self.rotation_position = 2
+            # изменяем позицию
             self.rect.y -= PLAYER_MOVEMENT_SPEED
         if self.going_left:
+            self.rotation_position = 1
             self.rect.x -= PLAYER_MOVEMENT_SPEED
         if self.going_right:
+            self.rotation_position = 3
             self.rect.x += PLAYER_MOVEMENT_SPEED
         if self.going_down:
+            self.rotation_position = 0
             self.rect.y += PLAYER_MOVEMENT_SPEED
-        # а потом проверяем, не столкнулся ли он с чем нибудь. если да, двигаем его назад
+
+        # если мы сейчас двигаемся, то меняем кадр анимации и переопределяем изображение
+        if any([self.going_up, self.going_down, self.going_left, self.going_right]):
+            if self.ticks % PLAYER_MOVEMENT_SPEED == 0:
+                # следующий новый кадр анимации
+                self.animation_counter = (self.animation_counter + 1) % len(self.animations[self.rotation_position])
+                # меняем кадр
+                self.image = self.animations[self.rotation_position][self.animation_counter]
+        # если мы остановили движение, то выбираем статичный кадр
+        else:
+            self.image = self.static_images[self.rotation_position]
+
+        # проверяем, не столкнулся ли он с чем нибудь. если да, двигаем его назад
         self.check_collisions(grid, builings_group)
 
         # перед тем, как зачислить игроку ресурс, нужно проверить, можно ли его добывать
@@ -239,7 +279,7 @@ class DoubleBarrelTurret(PlayerBuilding):
         # прогружаем все картинки с анимациями
         # представляем из себя двухмерный массив, где первая строка - это анимации стрельбы вниз, вторая влево,
         # третья вверх, четвертая вниз
-        self.images = [[pygame.image.load(os.path.join('Images', 'DoubleBarrelTurretAnimations', j, i))
+        self.images = [[load_image(os.path.join('DoubleBarrelTurretAnimations', j, i))
                         for i in ['double_barrel_turret_shoot_left.png',
                                   'double_barrel_turret.png',
                                   'double_barrel_turret_shoot_right.png',
