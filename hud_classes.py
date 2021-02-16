@@ -22,7 +22,7 @@ class Hud:
         self.day_night_gradient_rect.x = SIZE[0] - 122
         self.day_night_gradient_rect.y = SIZE[1] - 130
 
-    def draw(self, surface, daytime, tics, player):
+    def draw(self, surface, day_number, daytime, player):
         surface.fill(pygame.Color(0, 0, 0, 0))
         surface.blit(self.day_night_gradient, self.day_night_gradient_rect)
 
@@ -30,7 +30,7 @@ class Hud:
                          pygame.Color((255, 255, 255)),
                          (SIZE[0] - 125 + daytime, SIZE[1] - 131, 6, 17), 0)
 
-        text = self.font.render("Day " + str(tics // LENGTH_OF_THE_DAY + 1), 1, pygame.color.Color('white'))
+        text = self.font.render("Day " + str(day_number), 1, pygame.color.Color('white'))
         text_rect = text.get_rect()
         text_rect.x = SIZE[0] - 120
         text_rect.y = SIZE[1] - 150
