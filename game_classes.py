@@ -238,6 +238,12 @@ class PlayerBuilding(BaseBuilding):
     def __init__(self, x, y, *groups):
         super().__init__(x, y, *groups)
         self.building_type = 'PlayerBuilding'
+        self.health = 200
+
+    def get_damage(self, damage):
+        self.health -= damage
+        if self.health <= 0:
+            self.kill()
 
 
 class GeneratedBuilding(BaseBuilding):
@@ -272,6 +278,8 @@ class WoodenFence(PlayerBuilding):
         self.image = pygame.image.load(os.path.join('Images', 'Стена 1.png'))
         self.rect = self.image.get_rect().move(x, y)
 
+        self.health = WOODEN_FENCE_HEALTH
+
 
 class DoubleBarrelTurret(PlayerBuilding):
     def __init__(self, x, y, *groups):
@@ -291,46 +299,51 @@ class DoubleBarrelTurret(PlayerBuilding):
         self.rotation_position = 0
 
         # стреляет ли сейчас турель
-        self.shooting = False
+        self.focused_target = None
 
         # ставим картинку
         self.image = self.images[self.rotation_position][self.animation_counter]
         self.rect = self.image.get_rect().move(x, y)
 
+        self.health = DOUBLE_BARREL_TURRET_HEALTH
+
         self.ticks = 0
 
-        # минимальный радиус до цели, с которого можно стрелять
-        self.shooting_radius = 200
-
-        # с какой скоростью ведется стрельба
-        self.shooting_speed = 15
-
-    def update(self, target):
+    def update(self, targets_group):
         self.ticks += 1
 
-        # смотрим, достаем ли мы до цели. для тестирования стреляем в игрока
-        if get_distance(self, target) <= self.shooting_radius:
-            self.shooting = True
-        else:
-            self.shooting = False
+        # если у нас нет цели, то ищем одну.
+        if not self.focused_target:
+            for target in targets_group:
+                # смотрим, достаем ли мы до цели
+                if get_distance(self, target) <= DOUBLE_BARREL_TURRET_SHOOTING_RADIUS:
+                    self.focused_target = target
+                    break
+        # а если у нас есть цель, но она уже мертва, то сбрасываем цель
+        elif self.focused_target.health <= 0:
+            self.focused_target = None
+
         # если попали в тайминг смены кадра
-        if self.ticks % self.shooting_speed == 0:
+        if self.ticks % DOUBLE_BARREL_TURRET_SHOOTING_SPEED == 0:
             # меняем кадр анимации и переопределяем изображение
             self.animation_counter = (self.animation_counter + 1) % len(self.images[self.animation_counter])
             self.image = self.images[self.rotation_position][self.animation_counter]
 
             # если сейчас не стреляем, устанавливаем кадр покоя
-            if not self.shooting:
+            if not self.focused_target:
                 self.image = self.images[self.rotation_position][1]
             else:
+                # наносим урон, если находимся на кадре стрельбы
+                if self.animation_counter in [0, 2]:
+                    self.focused_target.get_damage(DOUBLE_BARREL_TURRET_DAMAGE)
                 # если стреляем, то смотрим, в какой стороне от турели находится цель, и туда разворачиваемся
-                if target.rect.right < self.rect.left:
+                if self.focused_target.rect.right < self.rect.left:
                     self.rotation_position = 1
-                elif target.rect.left > self.rect.right:
+                elif self.focused_target.rect.left > self.rect.right:
                     self.rotation_position = 3
-                elif target.rect.bottom > self.rect.top:
+                elif self.focused_target.rect.bottom > self.rect.top:
                     self.rotation_position = 0
-                elif target.rect.top < self.rect.bottom:
+                elif self.focused_target.rect.top < self.rect.bottom:
                     self.rotation_position = 2
 
 
@@ -338,9 +351,11 @@ class MainBuilding(PlayerBuilding):
     def __init__(self, x, y, *groups):
         super().__init__(x, y, *groups)
 
-        self.list_of_images = [pygame.image.load('Images/MainBuilding/' + str(i) + '.png') for i in range(1, 4)]
-        self.image = self.list_of_images[0]
+        self.images = [pygame.image.load('Images/MainBuilding/' + str(i) + '.png') for i in range(1, 4)]
+        self.image = self.images[0]
         self.rect = self.image.get_rect().move(x, y)
+
+        self.health = MAIN_BUILDING_HEALTH
 
         # переменные, отвечающие за анимацию
         self.tics = pygame.time.get_ticks()
@@ -350,8 +365,197 @@ class MainBuilding(PlayerBuilding):
     def update(self, player):
         # Картинка меняется каждые 1000 тиков
         if pygame.time.get_ticks() - self.tics > 1000:
-            self.image = self.list_of_images[self.indexes[self.i]]
+            self.image = self.images[self.indexes[self.i]]
             self.tics = pygame.time.get_ticks()
             self.i += 1
         if self.i == 4:
             self.i = 0
+
+
+class Enemy(pygame.sprite.Sprite):  # базовый класс противника. без картинки, без анимаций, ии ближней атаки
+    def __init__(self, x, y, buildings_group, *groups):
+        super().__init__(*groups)
+        self.image = pygame.Surface((100, 100))
+
+        self.rect = self.image.get_rect().move(x, y)
+        # главное здание, к которому будем идти.
+        self.main_building = None
+        self.health = 100
+
+        self.ticks = 0
+
+        # ищем среди всех построек главное здание и сохраняем себе
+        for building in buildings_group:
+            if type(building) == MainBuilding:
+                self.main_building = building
+                break
+
+    def update(self, buildings_group):
+        self.ticks += 1
+
+        # вычисляем вектор смещения персонажа
+        deltax, deltay = self.move(1)
+        # двигаемся
+        self.rect.centerx += deltax
+        self.rect.centery += deltay
+
+        # смотрим, во что мы врезались
+        collide_building = pygame.sprite.spritecollideany(self, buildings_group)
+        if collide_building:
+            # если врезались в дерево/камень, то пытаемся его обойти
+            # может работать коряво, но это лучшая попытка.
+            if collide_building.building_type == 'GeneratedBuilding':
+                if self.rect.right > collide_building.rect.left or self.rect.left < collide_building.rect.right:
+                    self.rect.y -= TACTICAL_CAMEL_MOVING_SPEED
+                if self.rect.top < collide_building.rect.bottom or self.rect.bottom > collide_building.rect.top:
+                    self.rect.x += TACTICAL_CAMEL_MOVING_SPEED
+            # если врезались, то возвращаемся обратно
+            self.rect.top -= deltay
+            self.rect.right -= deltax
+
+    def move(self, speed):  # функция вычислящая вектор смещения себя к цели
+        # если главное здание существует, то смещаемся. во всех других случаях нет
+        if self.main_building:
+            # получаем координаты центров себя и цели
+            x1, y1 = self.rect.centerx, self.rect.centery
+            x2, y2 = self.main_building.rect.centerx, self.main_building.rect.centery
+            # вычисляем вектор, в направлении которого нужно двигаться
+            deltax = x2 - x1
+            deltay = y2 - y1
+            # получаем длину этого вектора, и проверяем его, чтобы не поделить на 0
+            vector_len = math.sqrt(deltax ** 2 + deltay ** 2)
+            if vector_len != 0:
+                # нормализируем вектор, чтобы мы всегда двигались с одинаковой скоростью и можно было эту скорость
+                # настраивать
+                deltax = round(deltax / vector_len * speed)
+                deltay = round(deltay / vector_len * speed)
+
+                return deltax, deltay
+        return 0, 0
+
+    def get_damage(self, damage):  # получить урон. если нет здоровья, умираем
+        self.health -= damage
+        if self.health <= 0:
+            self.kill()
+
+
+class Camel(Enemy):  # обычный боец ближнего боя.
+    def __init__(self, x, y, buildings_group, *groups):
+        super().__init__(x, y, buildings_group, *groups)
+
+        # анимации походки
+        self.images = [[load_image(os.path.join('CamelAnimations', rotation, i))
+                        for i in ['1.png', '2.png', '1.png', '3.png']] for rotation in ['left', 'right']]
+
+        self.rotation_position = 0  # куда повернут объект. 0 - влево, 1 - вправо
+        self.animation_counter = 0  # на каком шаге анимации сейчас находимся
+        self.animation_speed = 15  # скорость смены кадра
+
+        # текущий кадр
+        self.image = self.images[self.rotation_position][self.animation_counter]
+
+        self.rect = self.image.get_rect().move(x, y)
+
+        self.health = CAMEL_HEALTH
+
+    def update(self, buildings_group):
+        # делаем то же самое что и в родительском классе, но добавляем анимацию и наносим урон постройке игрока,
+        # если столкнулись
+
+        self.ticks += 1
+
+        # двигаемся
+        deltax, deltay = self.move(CAMEL_MOVING_SPEED)
+        self.rect.centerx += deltax
+        self.rect.centery += deltay
+
+        # меняем кадр при движении
+        if self.ticks % (self.animation_speed - CAMEL_MOVING_SPEED) == 0:
+            self.animation_counter = (self.animation_counter + 1) % len(self.images[self.rotation_position])
+            if deltax < 0:
+                self.rotation_position = 0
+            else:
+                self.rotation_position = 1
+
+            self.image = self.images[self.rotation_position][self.animation_counter]
+
+        # Проверяем столкновения. если столкнулись с постройкой игрока, наносим ей урон
+        collide_building = pygame.sprite.spritecollideany(self, buildings_group)
+        if collide_building:
+            if collide_building.building_type == 'GeneratedBuilding':
+                if self.rect.right > collide_building.rect.left or self.rect.left < collide_building.rect.right:
+                    self.rect.y -= CAMEL_MOVING_SPEED
+                if self.rect.top < collide_building.rect.bottom or self.rect.bottom > collide_building.rect.top:
+                    self.rect.x += CAMEL_MOVING_SPEED
+            else:
+                if self.ticks % CAMEL_ATTACK_SPEED == 0:
+                    collide_building.get_damage(CAMEL_DAMAGE)
+
+            # отменяем последнее движение
+            self.rect.top -= deltay
+            self.rect.right -= deltax
+
+
+class TacticalCamel(Enemy):  # боец, который атакует с растояния
+    def __init__(self, x, y, buildings_group, *groups):
+        super().__init__(x, y, buildings_group, *groups)
+
+        # анимации ходьбы
+        self.images = [[load_image(os.path.join('TacticalCamelAnimations', i, j))
+                        for j in ['1.png', '2.png', '1.png', '3.png']] for i in ['left', 'right']]
+
+        # анимации атаки
+        self.attacking_images = [load_image(os.path.join('TacticalCamelAnimations', 'shooting', 'left.png')),
+                                 load_image(os.path.join('TacticalCamelAnimations', 'shooting', 'right.png'))]
+
+        self.rotation_position = 0
+        self.animation_counter = 0
+        self.animation_speed = 15
+
+        self.image = self.images[self.rotation_position][self.animation_counter]
+        self.rect = self.image.get_rect().move(x, y)
+
+        self.health = TACTICAL_CAMEL_HEALTH
+
+    def update(self, buildings_group):
+        self.ticks += 1
+
+        # проверяем, находимся ли мы рядом с какой то постройкой игрока.
+        # если да, то пропускаем продолжение функции, так как далше идет обработка движения
+        for building in buildings_group:
+            if get_distance(self, building) <= TACTICAL_CAMEL_ATTACK_RADIUS:
+                if building.building_type == 'PlayerBuilding':
+                    # делим выстрел на 2 части. первая - кадр стрельбы, во время которого наносим урон.
+                    # второй - кадр перезарядки, устанавливаем статитчную картинку
+                    if self.ticks % (TACTICAL_CAMEL_ATTACK_SPEED // 2) == 0:
+                        if self.image == self.attacking_images[self.rotation_position]:
+                            self.image = self.images[self.rotation_position][0]
+                        else:
+                            self.image = self.attacking_images[self.rotation_position]
+                            building.get_damage(TACTICAL_CAMEL_DAMAGE)
+                    return
+
+        deltax, deltay = self.move(TACTICAL_CAMEL_MOVING_SPEED)
+
+        if self.ticks % (self.animation_speed - TACTICAL_CAMEL_MOVING_SPEED) == 0:
+            self.animation_counter = (self.animation_counter + 1) % len(self.images[self.rotation_position])
+            if deltax < 0:
+                self.rotation_position = 0
+            else:
+                self.rotation_position = 1
+
+            self.image = self.images[self.rotation_position][self.animation_counter]
+
+        self.rect.centerx += deltax
+        self.rect.centery += deltay
+
+        collide_building = pygame.sprite.spritecollideany(self, buildings_group)
+        if collide_building:
+            if collide_building.building_type == 'GeneratedBuilding':
+                if self.rect.right > collide_building.rect.left or self.rect.left < collide_building.rect.right:
+                    self.rect.y -= CAMEL_MOVING_SPEED
+                if self.rect.top < collide_building.rect.bottom or self.rect.bottom > collide_building.rect.top:
+                    self.rect.x += CAMEL_MOVING_SPEED
+
+            self.rect.top -= deltay
+            self.rect.right -= deltax

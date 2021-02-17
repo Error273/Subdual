@@ -4,16 +4,18 @@ from hud_classes import *
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
 
+# работает ли игра
 running = True
 clock = pygame.time.Clock()
-tics = 0
-daytime = 0
-day_number = 1
+tics = 0  # тики, прошедшие с начала игры
+daytime = 0  # время суток
+day_number = 1  # количество пройденных дней
+enemies_were_spawn = False  # были ли заспавнены враги за последние сутки. нужно, чтобы враги не спавнили дважды
 
 all_sprites = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 buildings_group = pygame.sprite.Group()
-
+enemies_group = pygame.sprite.Group()
 
 # "тень" здания, которое мы собираемся построить
 building_shadow = None
@@ -28,17 +30,26 @@ buildings_choice_surface = pygame.Surface((2 * 100, 120), pygame.SRCALPHA, 32)
 # генерируем камни
 for _ in range(ROCKS_AMOUNT):
     # вычитаем 75 и 75, так как мы не хотим, чтобы камень выходило за границы поля
-    rock = spawn_object(Rock, grid.width * CELL_SIZE - 75, grid.height * CELL_SIZE - 75, buildings_group,
-                        buildings_group, all_sprites)
+    rock = spawn_object(Rock, buildings_group, all_sprites,
+                        min_x=0, min_y=0,
+                        max_x=grid.width * CELL_SIZE - 75,
+                        max_y=grid.height * CELL_SIZE - 75,
+                        collide_group=buildings_group)
 
 # генерируем деревья
 for _ in range(TREES_AMOUNT):
     # вычитаем 50 и 75, так как мы не хотим, чтобы дерево выходило за границы поля
-    tree = spawn_object(Tree, grid.width * CELL_SIZE - 50, grid.height * CELL_SIZE - 75, buildings_group,
-                        buildings_group, all_sprites)
+    tree = spawn_object(Tree, buildings_group, all_sprites,
+                        min_x=0, min_y=0,
+                        max_x=grid.width * CELL_SIZE - 50,
+                        max_y=grid.height * CELL_SIZE - 75,
+                        collide_group=buildings_group)
 
-player = spawn_object(Player, grid.width * CELL_SIZE - 25, grid.height * CELL_SIZE - 50, buildings_group, all_sprites,
-                      player_group)
+player = spawn_object(Player, all_sprites, player_group,
+                      min_x=0, min_y=0,
+                      max_x=grid.width * CELL_SIZE - 25,
+                      max_y=grid.height * CELL_SIZE - 50,
+                      collide_group=buildings_group)
 
 hud = Hud()
 buildings_preset_drawer = DrawBuildingsPresets(player)
@@ -86,6 +97,10 @@ while running:
                             # если мы пытались построить главное здание, то нужно вернуть возмжность ее заного поставить
                             if type(building) == MainBuilding:
                                 player.were_placed_main_building = False
+                        # если поставили главное здание, то выключаем режим постройки
+                        else:
+                            if type(building) == MainBuilding:
+                                player.set_potential_building(None)
 
 
                 elif event.button == 3:  # если нажали на правую кнопку мыши, то построку стоит удалить
@@ -127,13 +142,14 @@ while running:
             # если нажали на кнопку, отмеченную для строительства
             if event.key in range(pygame.K_1, pygame.K_3 + 1):
                 buildings_preset_drawer.selected_building = event.key - 48
-                if player.get_potential_building(): # если режим строительства уже включен, то его нужно выключить
+                if player.get_potential_building():  # если режим строительства уже включен, то его нужно выключить
                     buildings_preset_drawer.selected_building = 0
                     player.set_potential_building(None)
                 # Проверка необходимости активации режима постройки для MainBuilding
                 elif player.were_placed_main_building and event.key == pygame.K_1:
                     buildings_preset_drawer.selected_building = 0
                 else:
+                    # выбираем главное здание
                     if event.key == pygame.K_1:
                         player.set_potential_building(MainBuilding)
                     # выбираем забор
@@ -160,8 +176,6 @@ while running:
 
     screen.fill(BACKGROUND_COLOR)
 
-    # FIXME: при движении игрок сам сдвигается в сторону движения, то есть его координаты на экране меняются (а они не
-    # должны, так как камерой мы фокусим игрока)
     camera.update(player)
 
     for sprite in all_sprites:
@@ -176,23 +190,17 @@ while running:
         screen.blit(building_shadow, align_building(*player.get_mouse_pos(), grid))
 
     # отрисовываем все постройки
-    buildings_group.update(player) # пока в качестве цели для турели возьмем игрока
+    buildings_group.update(enemies_group)
     buildings_group.draw(screen)
 
     # Обновляем и отрисовывем игрока
     player_group.update(grid, buildings_group)
     player_group.draw(screen)
 
-    # Функция, описывающая зависимость коэффициента затемнения от времени суток
-    saturation_coef = 0
-    if daytime <= 33:
-        saturation_coef = 3 * daytime
-    elif 33 < daytime <= 66:
-        saturation_coef = 100
-    elif daytime < 100:
-        saturation_coef = -3 * daytime + 298
-    saturation_coef *= 0.7
+    enemies_group.update(buildings_group)
+    enemies_group.draw(screen)
 
+    saturation_coef = calculate_night_saturation_coef(daytime)
     # Затемнение поля
     pygame.draw.rect(day_night_surface, pygame.Color(15, 32, 161, int(saturation_coef)), (0, 0, SIZE[0], SIZE[1]), 0)
 
@@ -201,15 +209,25 @@ while running:
     # Данная переменная принимает значения от 0 до 100 и в зависимости от LENGTH_OF_DAY изменяется с разной скоростью
     daytime = tics // (LENGTH_OF_THE_DAY // 100)
     daytime %= 100
-    if daytime == 100:
-        day_number += 1
+
+    # если наступил новый день, то сбрасываем возможность спавна врагов и удаляем всех врагов, находящихся за экраном
+    # (повышает производительность)
+    if day_number != tics // LENGTH_OF_THE_DAY:
+        enemies_were_spawn = False
+        [enemy.kill() for enemy in enemies_group if get_distance(player, enemy) > max([WINDOW_HEIGHT, WINDOW_WIDTH])]
+        # обновляем день
+        day_number = tics // LENGTH_OF_THE_DAY
+    # если мы построили главное здание, можно спавнить врагов в определенное время суток
+    if daytime in range(33, 50) and player.were_placed_main_building and not enemies_were_spawn:
+        enemies_were_spawn = spawn_enemies(day_number, buildings_group, enemies_group, enemies_group, all_sprites,
+                                           grid=grid)
 
     # Отрисовка затемнения
     screen.blit(day_night_surface, (0, 0))
 
     # Отрисовка hud
     screen.blit(gui_surface, (0, 0))
-    hud.draw(gui_surface, daytime, tics, player)
+    hud.draw(gui_surface, day_number, daytime, player)
 
     # Отрисовка доступных для строительства построек
     screen.blit(buildings_choice_surface, (SIZE[0] // 2 - 65 * 2 // 2, SIZE[1] - 120))
