@@ -72,7 +72,7 @@ def load_image(name):
 
 
 # Функция для создания волны врагов
-def spawn_enemies(day_number, buildings_group, enemies_group, *init_groups, grid):
+def spawn_enemies(day_number, buildings_group, enemies_group, sound_channel, *init_groups, grid):
     # шанс спавна волны в конкретный кадр. может повести и враги в какой то день не придут.
     # с увеличением дня повышается и шанс
     chance = day_number
@@ -82,12 +82,13 @@ def spawn_enemies(day_number, buildings_group, enemies_group, *init_groups, grid
         for _ in range(int(enemies)):
             # ограничиваем количество противников в целях оптимизации
             if len(enemies_group) < MAX_ENEMIES_AMOUNT:
-                spawn_object(random.choice([game_classes.TacticalCamel, game_classes.Camel]), buildings_group,
-                             *init_groups,
-                             min_x=grid.rect.x, min_y=grid.rect.y,
-                             max_x=grid.width * CELL_SIZE,
-                             max_y=grid.height * CELL_SIZE,
-                             collide_group=buildings_group)
+                obj = spawn_object(random.choice([game_classes.TacticalCamel, game_classes.Camel]), buildings_group,
+                                   *init_groups,
+                                   min_x=grid.rect.x, min_y=grid.rect.y,
+                                   max_x=grid.width * CELL_SIZE,
+                                   max_y=grid.height * CELL_SIZE,
+                                   collide_group=buildings_group)
+                obj.set_sound_channel(sound_channel)
             else:
                 return True
         return True
