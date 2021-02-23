@@ -49,7 +49,7 @@ class Grid(pygame.sprite.Sprite):
 
 class Player(pygame.sprite.Sprite):
     # главный игрок
-    def __init__(self, x, y, *groups):
+    def __init__(self, x, y, sound_channel, *groups):
         super().__init__(*groups)
 
         # картинки для движения по всем направлениям. пришлось задавать их вручную, так как анимация похода влево-вправо
@@ -108,6 +108,12 @@ class Player(pygame.sprite.Sprite):
         # тики игрока, необходимы для внутренних таймеров
         self.ticks = 0
 
+        self.sound_channel = sound_channel
+
+        self.walking_sounds = [pygame.mixer.Sound(os.path.join('Sounds', 'Player', 'walking', f'{i}.mp3'))
+                               for i in range(1, 3)]
+        [sound.set_volume(0.1) for sound in self.walking_sounds]
+
     def update(self, grid, builings_group):
         self.ticks += 1
 
@@ -129,6 +135,10 @@ class Player(pygame.sprite.Sprite):
 
         # если мы сейчас двигаемся, то меняем кадр анимации и переопределяем изображение
         if any([self.going_up, self.going_down, self.going_left, self.going_right]):
+
+            if not self.sound_channel.get_busy():
+                self.sound_channel.play(random.choice(self.walking_sounds))
+
             if self.ticks % PLAYER_MOVEMENT_SPEED == 0:
                 # следующий новый кадр анимации
                 self.animation_counter = (self.animation_counter + 1) % len(self.animations[self.rotation_position])
@@ -137,6 +147,7 @@ class Player(pygame.sprite.Sprite):
         # если мы остановили движение, то выбираем статичный кадр
         else:
             self.image = self.static_images[self.rotation_position]
+            self.sound_channel.stop()
 
         # проверяем, не столкнулся ли он с чем нибудь. если да, двигаем его назад
         self.check_collisions(grid, builings_group)
@@ -232,18 +243,31 @@ class BaseBuilding(pygame.sprite.Sprite):
 
 class PlayerBuilding(BaseBuilding):
     # базовый класс построки, сделанной игроком.
-    # Отличается от BaseBuilding только тем, что у нее есть тип PlayerBuilding
+    # Отличается от BaseBuilding только тем, что у нее есть тип PlayerBuilding и звуковой канал
     # у каждой постройки должен быть свой тип для того, чтобы игрок не мог полностью разрушать постройки,
     # сделанные не им
     def __init__(self, x, y, *groups):
         super().__init__(x, y, *groups)
+
         self.building_type = 'PlayerBuilding'
         self.health = 200
+
+        self.sound_channel = None
 
     def get_damage(self, damage):
         self.health -= damage
         if self.health <= 0:
+            self.play_destroying_sound()
             self.kill()
+
+    def set_sound_channel(self, sound_channel):
+        self.sound_channel = sound_channel
+
+    def play_building_sound(self):
+        pass
+
+    def play_destroying_sound(self):
+        pass
 
 
 class GeneratedBuilding(BaseBuilding):
@@ -280,6 +304,20 @@ class WoodenFence(PlayerBuilding):
 
         self.health = WOODEN_FENCE_HEALTH
 
+        # звуки для постройки
+        self.building_sounds = [pygame.mixer.Sound(os.path.join('Sounds', 'WoodenFence', 'building',
+                                                                f'{i}.mp3')) for i in range(1, 4)]
+        # звуки для уничтожения
+        self.destroying_sound = pygame.mixer.Sound(os.path.join('Sounds', 'WoodenFence', 'destroying', '1.mp3'))
+
+    def play_building_sound(self):
+        if self.sound_channel:
+            self.sound_channel.play(random.choice(self.building_sounds))
+
+    def play_destroying_sound(self):
+        if self.sound_channel:
+            self.sound_channel.play(self.destroying_sound)
+
 
 class DoubleBarrelTurret(PlayerBuilding):
     def __init__(self, x, y, *groups):
@@ -309,6 +347,18 @@ class DoubleBarrelTurret(PlayerBuilding):
 
         self.ticks = 0
 
+        # звуки стрельбы
+        self.shooting_sounds = [pygame.mixer.Sound(os.path.join('Sounds', 'DoubleBarrelTurret', 'shooting', '1.wav')),
+                                pygame.mixer.Sound(os.path.join('Sounds', 'DoubleBarrelTurret', 'shooting', '2.ogg'))]
+        [sound.set_volume(0.5) for sound in self.shooting_sounds]
+
+        # Звуки при постройке
+        self.building_sounds = [pygame.mixer.Sound(os.path.join('Sounds', 'DoubleBarrelTurret', 'building',
+                                                                f'{i}.mp3')) for i in range(1, 4)]
+
+        # звуки при уничтожении
+        self.destroying_sound = pygame.mixer.Sound(os.path.join('Sounds', 'DoubleBarrelTurret', 'destroying', '1.flac'))
+
     def update(self, targets_group):
         self.ticks += 1
 
@@ -336,6 +386,7 @@ class DoubleBarrelTurret(PlayerBuilding):
                 # наносим урон, если находимся на кадре стрельбы
                 if self.animation_counter in [0, 2]:
                     self.focused_target.get_damage(DOUBLE_BARREL_TURRET_DAMAGE)
+                    self.play_shooting_sound()
                 # если стреляем, то смотрим, в какой стороне от турели находится цель, и туда разворачиваемся
                 if self.focused_target.rect.right < self.rect.left:
                     self.rotation_position = 1
@@ -345,6 +396,18 @@ class DoubleBarrelTurret(PlayerBuilding):
                     self.rotation_position = 0
                 elif self.focused_target.rect.top < self.rect.bottom:
                     self.rotation_position = 2
+
+    def play_building_sound(self):
+        if self.sound_channel:
+            self.sound_channel.play(random.choice(self.building_sounds))
+
+    def play_destroying_sound(self):
+        if self.sound_channel:
+            self.sound_channel.play(self.destroying_sound)
+
+    def play_shooting_sound(self):
+        if self.sound_channel:
+            self.sound_channel.play(random.choice(self.shooting_sounds))
 
 
 class MainBuilding(PlayerBuilding):
@@ -362,6 +425,9 @@ class MainBuilding(PlayerBuilding):
         self.indexes = (0, 1, 2, 1, 0)
         self.i = 0
 
+        self.building_sound = pygame.mixer.Sound(os.path.join('Sounds', 'MainBuilding', 'building', '1.mp3'))
+        self.destroying_sound = pygame.mixer.Sound(os.path.join('Sounds', 'MainBuilding', 'destroying', '1.mp3'))
+
     def update(self, player):
         # Картинка меняется каждые 1000 тиков
         if pygame.time.get_ticks() - self.tics > 1000:
@@ -370,6 +436,14 @@ class MainBuilding(PlayerBuilding):
             self.i += 1
         if self.i == 4:
             self.i = 0
+
+    def play_building_sound(self):
+        if self.sound_channel:
+            self.sound_channel.play(self.building_sound)
+
+    def play_destroying_sound(self):
+        if self.sound_channel:
+            self.sound_channel.play(self.destroying_sound)
 
 
 class Enemy(pygame.sprite.Sprite):  # базовый класс противника. без картинки, без анимаций, ии ближней атаки
@@ -383,6 +457,8 @@ class Enemy(pygame.sprite.Sprite):  # базовый класс противни
         self.health = 100
 
         self.ticks = 0
+
+        self.sound_channel = None
 
         # ищем среди всех построек главное здание и сохраняем себе
         for building in buildings_group:
@@ -437,6 +513,9 @@ class Enemy(pygame.sprite.Sprite):  # базовый класс противни
         self.health -= damage
         if self.health <= 0:
             self.kill()
+
+    def set_sound_channel(self, sound_channel):
+        self.sound_channel = sound_channel
 
 
 class Camel(Enemy):  # обычный боец ближнего боя.
@@ -517,6 +596,9 @@ class TacticalCamel(Enemy):  # боец, который атакует с рас
 
         self.health = TACTICAL_CAMEL_HEALTH
 
+        self.shooting_sounds = [pygame.mixer.Sound(os.path.join('Sounds', 'TacticalCamel', 'shooting', f'{i}.wav'))
+                                for i in range(1, 4)]
+
     def update(self, buildings_group):
         self.ticks += 1
 
@@ -533,6 +615,7 @@ class TacticalCamel(Enemy):  # боец, который атакует с рас
                         else:
                             self.image = self.attacking_images[self.rotation_position]
                             building.get_damage(TACTICAL_CAMEL_DAMAGE)
+                            self.play_shooting_sound()
                     return
 
         deltax, deltay = self.move(TACTICAL_CAMEL_MOVING_SPEED)
@@ -559,3 +642,7 @@ class TacticalCamel(Enemy):  # боец, который атакует с рас
 
             self.rect.top -= deltay
             self.rect.right -= deltax
+
+    def play_shooting_sound(self):
+        if self.sound_channel:
+            self.sound_channel.play(random.choice(self.shooting_sounds))
