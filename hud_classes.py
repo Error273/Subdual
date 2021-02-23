@@ -105,3 +105,91 @@ class DrawBuildingsPresets:
         if self.player.were_placed_main_building:
             pygame.draw.rect(surface, pygame.color.Color(128, 128, 0, 128), (5, 40, 57, 57), 0)
             self.text_and_image(1, surface)
+
+
+# Класс для главного меню и паузы
+class MainMenu:
+    def __init__(self, screen):
+        self.screen = screen
+        self.running = True
+
+        self.font = pygame.font.SysFont(None, 60)
+        # Реализация кнопок
+        self.list_of_buttons = ['Quit', 'pass', 'Start game']
+        self.number_of_button = len(self.list_of_buttons) - 1
+        self.dict_of_buttons = {'Start game': self.start_game, 'pass': self.pas,
+                                'Quit': self.quit, 'Continue': self.start_game}
+
+        self.mainClock = pygame.time.Clock()
+
+        # Логина, связанная со временем, необходимо было, чтобы во время паузы daytime не менялся
+        self.menu_tics = pygame.time.get_ticks()
+        self.pause_tics = 0
+        self.tics_before_pause = 0
+        self.is_menu = True
+        self.is_paused = False
+
+    def start_game(self):
+        self.running = False
+
+    # Заглушка
+    def pas(self):
+        print('passed')
+
+    def quit(self):
+        pygame.quit()
+        sys.exit()
+
+    # Метод для умного распредения кнопок по экрану и их отрисовки
+    def draw_buttons(self):
+        for i in range(len(self.list_of_buttons)):
+            color = (255, 255, 255) if i != self.number_of_button else (255, 0, 0)
+            text = self.list_of_buttons[i]
+
+            text_obj = self.font.render(text, 1, color)
+            text_rect = text_obj.get_rect()
+
+            x = WINDOW_WIDTH // 2 - text_rect.size[0] // 2
+            y = WINDOW_WIDTH // 2 - 40 * i + len(self.list_of_buttons) * 40 // 2 - 30
+
+            text_rect.topleft = (x, y)
+            self.screen.blit(text_obj, text_rect)
+
+    # Цикл отвечающий за меню и паузу. навигация по стрелкам или W, A, S, D
+    def main_menu(self):
+        if self.is_paused:
+            pygame.display.set_caption('Game is paused')
+            self.list_of_buttons[-1] = 'Continue'
+        else:
+            pygame.display.set_caption('Main menu')
+
+        while self.running:
+            self.screen.fill((0, 0, 0))
+            # Рассчеты, связанные со временем
+            if self.is_paused:
+                self.pause_tics = pygame.time.get_ticks() - self.tics_before_pause
+            if self.is_menu:
+                self.menu_tics = pygame.time.get_ticks()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_w or event.key == pygame.K_UP:
+                        self.number_of_button = (self.number_of_button + 1) % (len(self.list_of_buttons))
+                    if event.key == pygame.K_s or event.key == pygame.K_DOWN:
+                        self.number_of_button = self.number_of_button - 1\
+                            if self.number_of_button > 0 else len(self.list_of_buttons) - 1
+                    # Обработка нажатия кнопки
+                    if event.key == pygame.K_RETURN:
+                        selected_button = self.list_of_buttons[self.number_of_button]
+                        if selected_button == 'Start game':
+                            self.is_menu = False
+                        self.dict_of_buttons[selected_button]()
+
+            self.draw_buttons()
+
+            pygame.display.update()
+            self.mainClock.tick(60)

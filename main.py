@@ -4,6 +4,8 @@ from hud_classes import *
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
 
+# переменная для паузы
+is_game_paused = False
 # работает ли игра
 running = True
 clock = pygame.time.Clock()
@@ -56,6 +58,9 @@ buildings_preset_drawer = DrawBuildingsPresets(player)
 
 camera = Camera()
 
+menu = MainMenu(screen)
+menu.main_menu()
+
 while running:
     # выводим фпс в название окна
     pygame.display.set_caption(str(clock.get_fps()))
@@ -102,7 +107,6 @@ while running:
                             if type(building) == MainBuilding:
                                 player.set_potential_building(None)
 
-
                 elif event.button == 3:  # если нажали на правую кнопку мыши, то построку стоит удалить
                     for building in buildings_group:
                         # находим постройку, с которой соприкасается курсор и удаляем ее, если она не главное здание
@@ -129,6 +133,12 @@ while running:
         if event.type == pygame.MOUSEMOTION:
             player.set_mouse_pos(event.pos)
         if event.type == pygame.KEYDOWN:
+            # Пауза на эскейп
+            if event.key == pygame.K_ESCAPE:
+                menu.running = True
+                menu.is_paused = True
+                menu.tics_before_pause = pygame.time.get_ticks() - menu.pause_tics
+                menu.main_menu()
             # если нажата клавиша вниз, то начинаем движение
             if event.key == pygame.K_w and player.rect.y >= 0:
                 player.set_going_up(True)
@@ -205,7 +215,7 @@ while running:
     pygame.draw.rect(day_night_surface, pygame.Color(15, 32, 161, int(saturation_coef)), (0, 0, SIZE[0], SIZE[1]), 0)
 
     # Расчеты, связанные с циклом дня и ночи
-    tics = pygame.time.get_ticks()
+    tics = pygame.time.get_ticks() - (menu.menu_tics + menu.pause_tics)
     # Данная переменная принимает значения от 0 до 100 и в зависимости от LENGTH_OF_DAY изменяется с разной скоростью
     daytime = tics // (LENGTH_OF_THE_DAY // 100)
     daytime %= 100
