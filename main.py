@@ -164,7 +164,6 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 menu.running = True
                 menu.is_paused = True
-                menu.tics_before_pause = pygame.time.get_ticks() - menu.pause_tics
                 menu.main_menu()
             # если нажата клавиша вниз, то начинаем движение
             if event.key == pygame.K_w and player.rect.y >= 0:
@@ -242,7 +241,7 @@ while running:
     pygame.draw.rect(day_night_surface, pygame.Color(15, 32, 161, int(saturation_coef)), (0, 0, SIZE[0], SIZE[1]), 0)
 
     # Расчеты, связанные с циклом дня и ночи
-    tics = pygame.time.get_ticks() - (menu.menu_tics + menu.pause_tics)
+    tics += 1
     # Данная переменная принимает значения от 0 до 100 и в зависимости от LENGTH_OF_DAY изменяется с разной скоростью
     daytime = tics // (LENGTH_OF_THE_DAY // 100)
     daytime %= 100

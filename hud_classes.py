@@ -122,11 +122,6 @@ class MainMenu:
 
         self.mainClock = pygame.time.Clock()
 
-        # Логина, связанная со временем, необходимо было, чтобы во время паузы daytime не менялся
-        self.menu_tics = pygame.time.get_ticks()
-        self.pause_tics = 0
-        self.tics_before_pause = 0
-        self.is_menu = True
         self.is_paused = False
 
     def start_game(self):
@@ -165,11 +160,6 @@ class MainMenu:
 
         while self.running:
             self.screen.fill((0, 0, 0))
-            # Рассчеты, связанные со временем
-            if self.is_paused:
-                self.pause_tics = pygame.time.get_ticks() - self.tics_before_pause
-            if self.is_menu:
-                self.menu_tics = pygame.time.get_ticks()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -185,8 +175,6 @@ class MainMenu:
                     # Обработка нажатия кнопки
                     if event.key == pygame.K_RETURN:
                         selected_button = self.list_of_buttons[self.number_of_button]
-                        if selected_button == 'Start game':
-                            self.is_menu = False
                         self.dict_of_buttons[selected_button]()
 
             self.draw_buttons()
