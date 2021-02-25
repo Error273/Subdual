@@ -24,9 +24,10 @@ is_game_paused = False
 # работает ли игра
 running = True
 clock = pygame.time.Clock()
-tics = 0  # тики, прошедшие с начала игры
+ticks = 0  # тики, прошедшие с начала игры
 daytime = 0  # время суток
 day_number = 1  # количество пройденных дней
+points = 0  # количество очков. зачисляются за длительность выживания
 enemies_were_spawn = False  # были ли заспавнены враги за последние сутки. нужно, чтобы враги не спавнили дважды
 
 all_sprites = pygame.sprite.Group()
@@ -110,9 +111,13 @@ while running:
                         else:
                             building = player.get_potential_building()(x, y, buildings_group, all_sprites)
 
-                            # если постройка туруль, то устанавливаем ей звковой канал специально для турелей,
-                            # иначе - для всего сотавльного
+                            # если постройка туруль, то устанавливаем ей звуковой канал специально для турелей,
+                            # иначе - для всего оставльного
                             if type(building) == DoubleBarrelTurret:
+                                if player.inventory['wood'] - DOUBLE_BARREL_TURRET_RESOURCES[0] < 0 or \
+                                        player.inventory['stones'] - DOUBLE_BARREL_TURRET_RESOURCES[1] < 0:
+                                    building.kill()
+
                                 building.set_sound_channel(turrets_channel)
                             else:
                                 building.set_sound_channel(building_destroying_channel)
@@ -126,11 +131,23 @@ while running:
                             if type(building) == MainBuilding:
                                 player.were_placed_main_building = False
                         else:
+                            resources_to_build = (0, 0)
                             # если поставили главное здание, то выключаем режим постройки
                             if type(building) == MainBuilding:
                                 player.set_potential_building(None)
-                            # играем звук постройки
-                            building.play_building_sound()
+                            elif type(building) == WoodenFence:
+                                resources_to_build = WOODEN_FENCE_RESOURCES
+                            elif type(building) == DoubleBarrelTurret:
+                                resources_to_build = DOUBLE_BARREL_TURRET_RESOURCES
+                            player.inventory['wood'] -= resources_to_build[0]
+                            player.inventory['stones'] -= resources_to_build[1]
+                            if player.inventory['wood'] < 0 or player.inventory['stones'] < 0:
+                                player.inventory['wood'] += resources_to_build[0]
+                                player.inventory['stones'] += resources_to_build[1]
+                                building.kill()
+                            else:
+                                # играем звук постройки
+                                building.play_building_sound()
 
                 elif event.button == 3:  # если нажали на правую кнопку мыши, то построку стоит удалить
                     for building in buildings_group:
@@ -138,6 +155,13 @@ while running:
                         # (по задумке главное здание нельзя убрать)
                         if building.rect.collidepoint(x, y) and building.building_type == 'PlayerBuilding' and \
                                 type(building) != MainBuilding:
+                            resources_to_return = (0, 0)
+                            if type(building) == WoodenFence:
+                                resources_to_return = WOODEN_FENCE_RESOURCES
+                            elif type(building) == DoubleBarrelTurret:
+                                resources_to_return = DOUBLE_BARREL_TURRET_RESOURCES
+                            player.inventory['wood'] += resources_to_return[0] // 2
+                            player.inventory['stones'] += resources_to_return[1] // 2
                             # играем звук уничтожения
                             building.play_destroying_sound()
                             building.kill()
@@ -241,18 +265,23 @@ while running:
     pygame.draw.rect(day_night_surface, pygame.Color(15, 32, 161, int(saturation_coef)), (0, 0, SIZE[0], SIZE[1]), 0)
 
     # Расчеты, связанные с циклом дня и ночи
-    tics += 1
+    ticks += 1
     # Данная переменная принимает значения от 0 до 100 и в зависимости от LENGTH_OF_DAY изменяется с разной скоростью
-    daytime = tics // (LENGTH_OF_THE_DAY // 100)
+    daytime = ticks // (LENGTH_OF_THE_DAY // 100)
     daytime %= 100
 
     # если наступил новый день, то сбрасываем возможность спавна врагов и удаляем всех врагов, находящихся за экраном
     # (повышает производительность)
-    if day_number != tics // LENGTH_OF_THE_DAY:
+    if day_number != ticks // LENGTH_OF_THE_DAY:
         enemies_were_spawn = False
         [enemy.kill() for enemy in enemies_group if get_distance(player, enemy) > max([WINDOW_HEIGHT, WINDOW_WIDTH])]
         # обновляем день
-        day_number = tics // LENGTH_OF_THE_DAY
+        day_number = ticks // LENGTH_OF_THE_DAY
+
+    # получаем очки
+    if ticks % POINTS_EARNING_SPEED == 0 and player.were_placed_main_building:
+        points += 1
+
     # если мы построили главное здание, можно спавнить врагов в определенное время суток
     if daytime in range(33, 50) and player.were_placed_main_building and not enemies_were_spawn:
         enemies_were_spawn = spawn_enemies(day_number, buildings_group, enemies_group, enemies_channel,
