@@ -22,7 +22,7 @@ class Hud:
         self.day_night_gradient_rect.x = SIZE[0] - 122
         self.day_night_gradient_rect.y = SIZE[1] - 130
 
-    def draw(self, surface, day_number, daytime, player):
+    def draw(self, surface, day_number, daytime, player, scores):
         surface.fill(pygame.Color(0, 0, 0, 0))
         surface.blit(self.day_night_gradient, self.day_night_gradient_rect)
 
@@ -34,6 +34,12 @@ class Hud:
         text_rect = text.get_rect()
         text_rect.x = SIZE[0] - 120
         text_rect.y = SIZE[1] - 150
+        surface.blit(text, text_rect)
+
+        text = self.font.render('Scores — ' + str(scores), 1, pygame.color.Color('white'))
+        text_rect = text.get_rect()
+        text_rect.x = SIZE[0] - 120
+        text_rect.y = 10
         surface.blit(text, text_rect)
 
         # Текст, уведомляющий о начале или окончании ночи
@@ -112,10 +118,12 @@ class MainMenu:
     def __init__(self, screen):
         self.screen = screen
         self.running = True
+        self.buttons_font = pygame.font.Font('Fonts/19760.otf', 43)
+        self.font = pygame.font.Font('Fonts/Cute Cartoon.ttf', 120)
 
-        self.font = pygame.font.SysFont(None, 60)
+        # self.font = pygame.font.SysFont(None, 60)
         # Реализация кнопок
-        self.list_of_buttons = ['Quit', 'pass', 'Start game']
+        self.list_of_buttons = ['Quit', 'Start game']
         self.number_of_button = len(self.list_of_buttons) - 1
         self.dict_of_buttons = {'Start game': self.start_game, 'pass': self.pas,
                                 'Quit': self.quit, 'Continue': self.start_game}
@@ -123,6 +131,10 @@ class MainMenu:
         self.mainClock = pygame.time.Clock()
 
         self.is_paused = False
+
+        self.menu_surface = pygame.Surface(SIZE, pygame.SRCALPHA, 32)
+
+        self.saturation_coef = 0
 
     def start_game(self):
         self.running = False
@@ -135,20 +147,37 @@ class MainMenu:
         pygame.quit()
         sys.exit()
 
+    def blurSurface(self, surface, amt):
+        if amt < 1.0:
+            amt = 1
+        scale = 1.0 / float(amt)
+        surf_size = surface.get_size()
+        scale_size = (int(surf_size[0] * scale), int(surf_size[1] * scale))
+        surf = pygame.transform.smoothscale(surface, scale_size)
+        surf = pygame.transform.smoothscale(surf, surf_size)
+        return surf
+
     # Метод для умного распредения кнопок по экрану и их отрисовки
     def draw_buttons(self):
+        text_obj = self.font.render('Subdual', 1, (120, 255, 120))
+        text_rect = text_obj.get_rect()
+
+        x = WINDOW_WIDTH // 2 - text_rect.size[0] // 2
+        y = WINDOW_WIDTH // 7
+        text_rect.topleft = (x, y)
+        self.menu_surface.blit(text_obj, text_rect)
         for i in range(len(self.list_of_buttons)):
-            color = (255, 255, 255) if i != self.number_of_button else (255, 0, 0)
+            color = (255, 255, 255) if i != self.number_of_button else (110, 255, 110)
             text = self.list_of_buttons[i]
 
-            text_obj = self.font.render(text, 1, color)
+            text_obj = self.buttons_font.render(text, 1, color)
             text_rect = text_obj.get_rect()
 
             x = WINDOW_WIDTH // 2 - text_rect.size[0] // 2
             y = WINDOW_WIDTH // 2 - 40 * i + len(self.list_of_buttons) * 40 // 2 - 30
 
             text_rect.topleft = (x, y)
-            self.screen.blit(text_obj, text_rect)
+            self.menu_surface.blit(text_obj, text_rect)
 
     # Цикл отвечающий за меню и паузу. навигация по стрелкам или W, A, S, D
     def main_menu(self):
@@ -157,10 +186,8 @@ class MainMenu:
             self.list_of_buttons[-1] = 'Continue'
         else:
             pygame.display.set_caption('Main menu')
-
         while self.running:
-            self.screen.fill((0, 0, 0))
-
+            self.menu_surface.fill((0, 0, 0))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -178,6 +205,6 @@ class MainMenu:
                         self.dict_of_buttons[selected_button]()
 
             self.draw_buttons()
-
+            self.screen.blit(self.menu_surface, (0, 0))
             pygame.display.update()
             self.mainClock.tick(60)

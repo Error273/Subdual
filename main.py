@@ -293,11 +293,10 @@ while running:
 
     # Отрисовка hud
     screen.blit(gui_surface, (0, 0))
-    hud.draw(gui_surface, day_number, daytime, player)
+    hud.draw(gui_surface, day_number, daytime, player, scores=points)
 
     # Отрисовка доступных для строительства построек
     screen.blit(buildings_choice_surface, (SIZE[0] // 2 - 65 * 2 // 2, SIZE[1] - 120))
     buildings_preset_drawer.draw(buildings_choice_surface)
-
     pygame.display.flip()
     clock.tick(60)
