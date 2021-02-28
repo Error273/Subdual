@@ -93,3 +93,60 @@ def spawn_enemies(day_number, buildings_group, enemies_group, sound_channel, *in
                 return True
         return True
     return False
+
+
+def restart_game():
+    import main
+    import hud_classes
+    main.is_game_paused = False
+    main.running = True
+    main.clock = pygame.time.Clock()
+    main.ticks = 0
+    main.daytime = 0
+    main.day_number = 1
+    main.points = 0
+    main.enemies_were_spawn = False
+    main.all_sprites.remove()
+    main.player_group.remove()
+    main.buildings_group.remove()
+    main.enemies_group.remove()
+    main.all_sprites = pygame.sprite.Group()
+    main.player_group = pygame.sprite.Group()
+    main.buildings_group = pygame.sprite.Group()
+    main.enemies_group = pygame.sprite.Group()
+
+    main.building_shadow = None
+
+    main.grid = game_classes.Grid(100, 100, main.all_sprites)
+
+    main.gui_surface = pygame.Surface(SIZE, pygame.SRCALPHA, 32)
+    main.day_night_surface = pygame.Surface(SIZE, pygame.SRCALPHA, 32)
+    main.buildings_choice_surface = pygame.Surface((2 * 100, 120), pygame.SRCALPHA, 32)
+
+    # генерируем камни
+    for _ in range(ROCKS_AMOUNT):
+        main.rock = spawn_object(game_classes.Rock, main.buildings_group, main.all_sprites,
+                            min_x=0, min_y=0,
+                            max_x=main.grid.width * CELL_SIZE - 75,
+                            max_y=main.grid.height * CELL_SIZE - 75,
+                            collide_group=main.buildings_group)
+
+    for _ in range(TREES_AMOUNT):
+        main.tree = spawn_object(game_classes.Tree, main.buildings_group, main.all_sprites,
+                            min_x=0, min_y=0,
+                            max_x=main.grid.width * CELL_SIZE - 50,
+                            max_y=main.grid.height * CELL_SIZE - 75,
+                            collide_group=main.buildings_group)
+
+    main.player = spawn_object(game_classes.Player, main.player_walking_channel, main.all_sprites, main.player_group,
+                          min_x=0, min_y=0,
+                          max_x=main.grid.width * CELL_SIZE - 25,
+                          max_y=main.grid.height * CELL_SIZE - 50,
+                          collide_group=main.buildings_group)
+
+    main.hud = hud_classes.Hud()
+    main.buildings_preset_drawer = hud_classes.DrawBuildingsPresets(main.player)
+
+    main.camera = game_classes.Camera()
+    main.menu.running = True
+    main.menu.main_menu()

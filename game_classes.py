@@ -100,6 +100,7 @@ class Player(pygame.sprite.Sprite):
         # Была ли поставлена главная постройка. Проверяется для принятия решение о блокировке постройки
         # и изменении слота постройки
         self.were_placed_main_building = False
+        self.were_destroyed_main_building = False
 
         # инвентарь игрока. удобно держать его в виде словаря
         self.inventory = {'stones': 0,
@@ -113,6 +114,9 @@ class Player(pygame.sprite.Sprite):
         self.walking_sounds = [pygame.mixer.Sound(os.path.join('Sounds', 'Player', 'walking', f'{i}.mp3'))
                                for i in range(1, 3)]
         [sound.set_volume(0.1) for sound in self.walking_sounds]
+
+        # Выбранная постройка
+        self.selected_building = 0
 
     def update(self, grid, builings_group):
         self.ticks += 1
@@ -436,6 +440,13 @@ class MainBuilding(PlayerBuilding):
             self.i += 1
         if self.i == 4:
             self.i = 0
+
+    def get_damage(self, damage):
+        self.health -= damage
+        if self.health <= 0:
+            restart_game()
+            self.play_destroying_sound()
+            self.kill()
 
     def play_building_sound(self):
         if self.sound_channel:

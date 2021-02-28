@@ -1,7 +1,9 @@
 from game_classes import *
 from hud_classes import *
 
+
 pygame.init()
+pygame.display.set_caption('Subdual')
 
 # инициализируем миксер, создаем 8 каналов
 pygame.mixer.init()
@@ -78,9 +80,6 @@ menu = MainMenu(screen)
 menu.main_menu()
 
 while running:
-    # выводим фпс в название окна
-    pygame.display.set_caption(str(clock.get_fps()))
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             # если нажали на крестик, выходим
@@ -201,13 +200,13 @@ while running:
 
             # если нажали на кнопку, отмеченную для строительства
             if event.key in range(pygame.K_1, pygame.K_3 + 1):
-                buildings_preset_drawer.selected_building = event.key - 48
+                player.selected_building = event.key - 48
                 if player.get_potential_building():  # если режим строительства уже включен, то его нужно выключить
-                    buildings_preset_drawer.selected_building = 0
+                    player.selected_building = 0
                     player.set_potential_building(None)
                 # Проверка необходимости активации режима постройки для MainBuilding
                 elif player.were_placed_main_building and event.key == pygame.K_1:
-                    buildings_preset_drawer.selected_building = 0
+                    player.selected_building = 0
                 else:
                     # выбираем главное здание
                     if event.key == pygame.K_1:

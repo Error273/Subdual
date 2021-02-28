@@ -4,7 +4,9 @@ from functions import *
 # Класс для отрисовки Hud'а
 class Hud:
     def __init__(self):
-        self.font = pygame.font.Font(None, 25)
+        self.font = pygame.font.Font('Fonts/20050.ttf', 23)
+        self.scores_font = pygame.font.Font('Fonts/20050.ttf', 40)
+        self.scores_font.set_bold(True)
         self.logger_font = pygame.font.Font(None, 30)
 
         self.tree_icon = load_image('tree_icon.png')
@@ -22,6 +24,9 @@ class Hud:
         self.day_night_gradient_rect.x = SIZE[0] - 122
         self.day_night_gradient_rect.y = SIZE[1] - 130
 
+        # Словарь, определяюший кол-во ресурсов для крафта в зависимости от выбранной постройки
+        self.resources_needed_for_craft = {2: WOODEN_FENCE_RESOURCES, 3: DOUBLE_BARREL_TURRET_RESOURCES}
+
     def draw(self, surface, day_number, daytime, player, scores):
         surface.fill(pygame.Color(0, 0, 0, 0))
         surface.blit(self.day_night_gradient, self.day_night_gradient_rect)
@@ -33,13 +38,13 @@ class Hud:
         text = self.font.render("Day " + str(day_number), 1, pygame.color.Color('white'))
         text_rect = text.get_rect()
         text_rect.x = SIZE[0] - 120
-        text_rect.y = SIZE[1] - 150
+        text_rect.y = SIZE[1] - 157
         surface.blit(text, text_rect)
 
-        text = self.font.render('Scores — ' + str(scores), 1, pygame.color.Color('white'))
+        text = self.scores_font.render(str(scores), 1, pygame.color.Color('white'))
         text_rect = text.get_rect()
-        text_rect.x = SIZE[0] - 120
-        text_rect.y = 10
+        text_rect.x = SIZE[0] - 70
+        text_rect.y = 5
         surface.blit(text, text_rect)
 
         # Текст, уведомляющий о начале или окончании ночи
@@ -53,17 +58,35 @@ class Hud:
             text_rect.y = SIZE[1] - 600
             surface.blit(text, text_rect)
 
-        wood_text = self.font.render(" — " + str(player.inventory['wood']), 1, pygame.color.Color('white'))
-        wood_text_rect = text.get_rect()
-        wood_text_rect.x = SIZE[0] - 80
-        wood_text_rect.y = SIZE[1] - 90
+        wood_text = self.font.render(" - " + str(player.inventory['wood']), 1, pygame.color.Color('white'))
+        wood_text_rect = wood_text.get_rect()
+        wood_text_rect.x = SIZE[0] - 85
+        wood_text_rect.y = SIZE[1] - 97
         surface.blit(wood_text, wood_text_rect)
 
-        stones_text = self.font.render(" — " + str(player.inventory['stones']), 1, pygame.color.Color('white'))
+        stones_text = self.font.render(" - " + str(player.inventory['stones']), 1, pygame.color.Color('white'))
         stones_text_rect = stones_text.get_rect()
-        stones_text_rect.x = SIZE[0] - 80
-        stones_text_rect.y = SIZE[1] - 55
+        stones_text_rect.x = SIZE[0] - 85
+        stones_text_rect.y = SIZE[1] - 63
         surface.blit(stones_text, stones_text_rect)
+
+        if player.selected_building > 1:
+            resources = self.resources_needed_for_craft[player.selected_building]
+            color_of_wood_text = (255, 255, 255) if player.inventory['wood'] - resources[0] >= 0 else (200, 0, 0)
+            color_of_stones_text = (255, 255, 255) if player.inventory['stones'] - resources[1] >= 0 else (200, 0, 0)
+            if resources[0] > 0:
+                wood_price_text = self.font.render(' - {}'.format(resources[0]), 1, color_of_wood_text)
+                wood_price_text_rect = wood_price_text.get_rect()
+                wood_price_text_rect.y = wood_text_rect.y
+                wood_price_text_rect.x = wood_text_rect.width + wood_text_rect.x
+                surface.blit(wood_price_text, wood_price_text_rect)
+
+            if resources[1] > 0:
+                stones_price_text = self.font.render(' - {}'.format(resources[1]), 1, color_of_stones_text)
+                stones_price_text_rect = stones_price_text.get_rect()
+                stones_price_text_rect.y = stones_text_rect.y
+                stones_price_text_rect.x = stones_text_rect.width + stones_text_rect.x
+                surface.blit(stones_price_text, stones_price_text_rect)
 
         surface.blit(self.tree_icon, self.tree_icon_rect)
         surface.blit(self.stone_icon, self.stone_icon_rect)
@@ -76,7 +99,6 @@ class DrawBuildingsPresets:
         self.types_of_buildings = {1: load_image('MainBuilding/1.png'),
                                    2: load_image('Стена 1.png'),
                                    3: load_image('DoubleBarrelTurretAnimations/down/double_barrel_turret.png')}
-        self.selected_building = 0
         self.amount_of_buildings = len(self.types_of_buildings)
         self.building_choice_surface_coords = (SIZE[0] // 2 - 65 * self.amount_of_buildings // 2, SIZE[1] - 120)
 
@@ -102,7 +124,7 @@ class DrawBuildingsPresets:
     def draw(self, surface):
         surface.fill(pygame.Color(0, 0, 0, 0))
         for i in range(1, self.amount_of_buildings + 1):
-            if self.selected_building == i:
+            if self.player.selected_building == i:
                 pygame.draw.rect(surface, pygame.color.Color(128, 128, 0), (65 * (i - 1) + 5, 40, 55, 55), 5)
             else:
                 pygame.draw.rect(surface, pygame.color.Color(128, 128, 0), (65 * (i - 1) + 5, 40, 55, 55), 2)
@@ -115,7 +137,7 @@ class DrawBuildingsPresets:
 
 # Класс для главного меню и паузы
 class MainMenu:
-    def __init__(self, screen):
+    def __init__(self, screen, is_game_over=False):
         self.screen = screen
         self.running = True
         self.buttons_font = pygame.font.Font('Fonts/19760.otf', 43)
@@ -125,12 +147,13 @@ class MainMenu:
         # Реализация кнопок
         self.list_of_buttons = ['Quit', 'Start game']
         self.number_of_button = len(self.list_of_buttons) - 1
-        self.dict_of_buttons = {'Start game': self.start_game, 'pass': self.pas,
+        self.dict_of_buttons = {'Start game': self.start_game,
                                 'Quit': self.quit, 'Continue': self.start_game}
 
         self.mainClock = pygame.time.Clock()
 
         self.is_paused = False
+        self.is_game_over = False
 
         self.menu_surface = pygame.Surface(SIZE, pygame.SRCALPHA, 32)
 
@@ -138,24 +161,11 @@ class MainMenu:
 
     def start_game(self):
         self.running = False
-
-    # Заглушка
-    def pas(self):
-        print('passed')
+        pygame.display.set_caption('Subdual')
 
     def quit(self):
         pygame.quit()
         sys.exit()
-
-    def blurSurface(self, surface, amt):
-        if amt < 1.0:
-            amt = 1
-        scale = 1.0 / float(amt)
-        surf_size = surface.get_size()
-        scale_size = (int(surf_size[0] * scale), int(surf_size[1] * scale))
-        surf = pygame.transform.smoothscale(surface, scale_size)
-        surf = pygame.transform.smoothscale(surf, surf_size)
-        return surf
 
     # Метод для умного распредения кнопок по экрану и их отрисовки
     def draw_buttons(self):
