@@ -137,8 +137,10 @@ class DrawBuildingsPresets:
 
 # Класс для главного меню и паузы
 class MainMenu:
-    def __init__(self, screen, is_game_over=False):
+    def __init__(self, screen, player, mixer, is_game_over=False):
         self.screen = screen
+        self.player = player
+        self.mixer = mixer
         self.running = True
         self.buttons_font = pygame.font.Font('Fonts/19760.otf', 43)
         self.font = pygame.font.Font('Fonts/Cute Cartoon.ttf', 120)
@@ -191,6 +193,11 @@ class MainMenu:
 
     # Цикл отвечающий за меню и паузу. навигация по стрелкам или W, A, S, D
     def main_menu(self):
+        self.mixer.stop()
+        self.player.going_right = False
+        self.player.going_left = False
+        self.player.going_up = False
+        self.player.going_down = False
         if self.is_paused:
             pygame.display.set_caption('Game is paused')
             self.list_of_buttons[-1] = 'Continue'
