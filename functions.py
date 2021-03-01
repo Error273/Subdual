@@ -126,23 +126,23 @@ def restart_game():
     # генерируем камни
     for _ in range(ROCKS_AMOUNT):
         main.rock = spawn_object(game_classes.Rock, main.buildings_group, main.all_sprites,
-                            min_x=0, min_y=0,
-                            max_x=main.grid.width * CELL_SIZE - 75,
-                            max_y=main.grid.height * CELL_SIZE - 75,
-                            collide_group=main.buildings_group)
+                                 min_x=0, min_y=0,
+                                 max_x=main.grid.width * CELL_SIZE - 75,
+                                 max_y=main.grid.height * CELL_SIZE - 75,
+                                 collide_group=main.buildings_group)
 
     for _ in range(TREES_AMOUNT):
         main.tree = spawn_object(game_classes.Tree, main.buildings_group, main.all_sprites,
-                            min_x=0, min_y=0,
-                            max_x=main.grid.width * CELL_SIZE - 50,
-                            max_y=main.grid.height * CELL_SIZE - 75,
-                            collide_group=main.buildings_group)
+                                 min_x=0, min_y=0,
+                                 max_x=main.grid.width * CELL_SIZE - 50,
+                                 max_y=main.grid.height * CELL_SIZE - 75,
+                                 collide_group=main.buildings_group)
 
     main.player = spawn_object(game_classes.Player, main.player_walking_channel, main.all_sprites, main.player_group,
-                          min_x=0, min_y=0,
-                          max_x=main.grid.width * CELL_SIZE - 25,
-                          max_y=main.grid.height * CELL_SIZE - 50,
-                          collide_group=main.buildings_group)
+                               min_x=0, min_y=0,
+                               max_x=main.grid.width * CELL_SIZE - 25,
+                               max_y=main.grid.height * CELL_SIZE - 50,
+                               collide_group=main.buildings_group)
 
     main.hud = hud_classes.Hud()
     main.buildings_preset_drawer = hud_classes.DrawBuildingsPresets(main.player)

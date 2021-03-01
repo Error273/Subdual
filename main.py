@@ -7,17 +7,18 @@ pygame.display.set_caption('Subdual')
 
 # инициализируем миксер, создаем 8 каналов
 pygame.mixer.init()
-pygame.mixer.set_num_channels(8)
+mixer = pygame.mixer
+mixer.set_num_channels(8)
 
 # инициализация звуковых каналов
 # канал для ходьбы игрока
-player_walking_channel = pygame.mixer.Channel(1)
+player_walking_channel = mixer.Channel(1)
 # канал отдельно для турелей, так как они издают много звуков
-turrets_channel = pygame.mixer.Channel(2)
+turrets_channel = mixer.Channel(2)
 # канал для врагов, чтобы не перебивали все остальное
-enemies_channel = pygame.mixer.Channel(3)
+enemies_channel = mixer.Channel(3)
 # канал для звуков установки/разрушения построек игроком
-building_destroying_channel = pygame.mixer.Channel(4)
+building_destroying_channel = mixer.Channel(4)
 
 screen = pygame.display.set_mode(SIZE)
 
@@ -76,7 +77,7 @@ buildings_preset_drawer = DrawBuildingsPresets(player)
 
 camera = Camera()
 
-menu = MainMenu(screen)
+menu = MainMenu(screen, player, mixer)
 menu.main_menu()
 
 while running:
